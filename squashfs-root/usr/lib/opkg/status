@@ -641,14 +641,6 @@ Status: install hold installed
 Architecture: ramips_24kec
 Installed-Time: 1487138616
 
-Package: kmod-nls-cp437
-Version: 3.10.14-1
-Depends: kernel (= 3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137), kmod-nls-base
-Provides:
-Status: install hold installed
-Architecture: ramips_24kec
-Installed-Time: 1487138616
-
 Package: luci-app-h5
 Version: git-adab218-1
 Depends: libc
@@ -1084,14 +1076,6 @@ Status: install user installed
 Architecture: ramips_24kec
 Installed-Time: 1487138614
 
-Package: kmod-nls-cp850
-Version: 3.10.14-1
-Depends: kernel (= 3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137), kmod-nls-base
-Provides:
-Status: install hold installed
-Architecture: ramips_24kec
-Installed-Time: 1487138616
-
 Package: libubox-lua
 Version: 2014-08-04-dffbc09baf71b294185a36048166d00066d433b5
 Depends: libc, libubox, liblua
@@ -1116,14 +1100,6 @@ Status: install user installed
 Architecture: ramips_24kec
 Installed-Time: 1487138617
 
-Package: kmod-nls-iso8859-15
-Version: 3.10.14-1
-Depends: kernel (= 3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137), kmod-nls-base
-Provides:
-Status: install hold installed
-Architecture: ramips_24kec
-Installed-Time: 1487138616
-
 Package: kmod-hw_wdg
 Version: 3.10.14-1
 Depends: kernel (= 3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137)
@@ -1139,14 +1115,6 @@ Provides:
 Status: install user installed
 Architecture: ramips_24kec
 Installed-Time: 1487138617
-
-Package: kmod-nls-iso8859-1
-Version: 3.10.14-1
-Depends: kernel (= 3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137), kmod-nls-base
-Provides:
-Status: install hold installed
-Architecture: ramips_24kec
-Installed-Time: 1487138616
 
 Package: luci
 Version: git-adab218-1
