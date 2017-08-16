@@ -18,6 +18,10 @@ Already removed useless functions:
 - usb
 - block-mount
 - ddns
+- kmod-nls-cp437
+  kmod-nls-cp850
+  kmod-nls-iso8859-1
+  kmod-nls-iso8859-15
 
 Already enabled functions:
 
