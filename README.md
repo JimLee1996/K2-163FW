@@ -8,9 +8,21 @@ Already removed harmful functions:
 
 - adpush
 - data_collect
+- kmod-price_compare
 - tr069
-- price_compare
-- auto_upgrade
+
+Already removed useless functions:
+
+- telnetd_startup
+- speedtest
+- usb
+- block-mount
+- ddns
+
+Already enabled functions:
+
+- telnet
+- opkg
 
 Not yet
 
@@ -31,8 +43,6 @@ schemeupgrade - 1.0-1
 tnat - 1
 update_usrproto - 1
 ```
-
-Telnetd enabled
 
 #### Usage
 
