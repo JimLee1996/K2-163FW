@@ -1,0 +1,419 @@
+<%#
+Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+
+DISCREPTION   : LuCI - Lua Configuration Interface - quick guide support
+AUTHOR        :     xiangjun.fu <    xiangjun.fu@phicomm.com.cn>
+CREATED DATE  : 2016-05-05
+MODIFIED DATE : 
+-%>
+
+<!DOCTYPE html>
+<html>
+<% 
+local uci_t = luci.model.uci.cursor() 
+require "luci.phicommproduct"   
+%> 
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no"/> 
+    <%+title%>
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/icon_fonts_style.css">
+    <link rel="stylesheet" href="<%=media%>/css/guide.css">
+    <script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+    <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/guide.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+      <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="<%=media%>/js/html5shiv.js"></script>
+  <script src="<%=media%>/js/respond.min.js"></script>
+  <![endif]-->
+    <% include("themes/" .. theme .. "/multlangjs") %>
+    <script type="text/javascript">
+        media_path="";
+        $(function(){
+            var wancfgtype = "<%=uci_t:get("network","wan","detectwanproto")%>";
+            <% if 2 == fromautodetect then %>
+            var wandetecttype = "<%=uci_t:get("network","wan","detectwanproto")%>";
+            wancfgtype = wandetecttype
+            <%end%>
+
+            $("[name='inter_access_meth_table']").css("display","none");
+            if(wancfgtype == "pppoe" || wancfgtype == "PPPOE")
+            {
+                document.internet_setting.connectionType.value = "PPPOE";
+                $("[value='<%:qckgd_pppoe%>']").css("display","block");
+                $("#dLabel").find("input").val("<%:qckgd_pppoe%>");
+            }
+            else if(wancfgtype == "dhcp" || wancfgtype == "DHCP")
+            {
+                document.internet_setting.connectionType.value = "DHCP";
+                $("[value='<%:qckgd_dhcp%>']").css("display","block");
+                $("#dLabel").find("input").val("<%:qckgd_dhcp%>");
+            }
+            else
+            {
+                document.internet_setting.connectionType.value = "STATIC";
+                $("[value='<%:qckgd_static%>']").css("display","block");
+                $("#dLabel").find("input").val("<%:qckgd_static%>");
+            }
+            selectchange(document.internet_setting.connectionType.value);
+            
+            <% if 2 == fromautodetect then %>
+            if(wandetecttype != "PPPOE" && wandetecttype != "DHCP" && wandetecttype != "STATIC")
+            {
+                showerror("<%:qckgd_auodetect_error%>");
+            }
+            <%end%>
+            if($("#pppoeUser").val().length<=0){
+                $("#pppoeUser").val(" ");
+            }
+            $("#pppoeUser").focus(function(){
+                if($(this).val()==" "){
+                    $(this).val("");
+                }
+            })
+        });
+    </script>
+</head>
+<body class="content_body" oncontextmenu=self.event.returnValue=false>
+    <div class="guide_logo">
+            <img src="<%=media%>/images/logo_guide.png"/>
+            <span>快速向导</span>
+    </div>
+    <div class="guide_top_right">
+    </div>
+    <form method="post" name="internet_setting" action="<%=REQUEST_URI%>">
+        <div class="guide_center_div">
+            <div class="guide_content_div">
+                <div class="titleDiv ">
+                    <span class="titleSpan"><%:qckgd_internetset%></span>
+                </div>
+                <input name="connectionType" value="" type="hidden">
+                <input name="autodetect" value="" type="hidden">
+                <div class="guide_title_hr"></div>
+                <div class="guide_msg_div">
+                    <span id="guide_msg_span1" class="guide_msg_div_span1"></span>
+                    <span id="guide_msg_span2" class="guide_msg_div_span2"></span>
+                </div>
+                <div class="guide_internet_type_div">
+                    <div class="guide_auto_check_bt_div">
+                     <button id="auto_det_bt" type="button" class="auto_det_button" onclick="autodetect_submit()"><%:qckgd_auodetect%>
+                     </button>
+                 </div>
+                 <div class="guide_internet_sel_div">
+                    <span style="float: left;height: 31px;line-height: 31px;"><%:qckgd_internet_type%></span>
+                    <div class="dropdown dropdown_div" style="float: left;left: 4px;">
+                        <div class="dropdown_button interAccessMeth" onclick="dropdown_click(this)" id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <input class="dropdown_input" readonly="readonly" onfocus="this.blur();"  UNSELECTABLE="on" value=""/>
+                            <span class="icon-downarrow" style="color: #F08300;position: relative;    top: 3px;"></span>
+                        </div>
+                        <ul class="dropdown-menu" aria-labelledby="dLabel">
+                            <li value="PPPOE"><a value="<%:qckgd_pppoe%>"><%:qckgd_pppoe%></a></li>
+                            <li value="DHCP"><a value="<%:qckgd_dhcp%>"><%:qckgd_dhcp%></a></li>
+                            <li value="STATIC"><a value="<%:qckgd_static%>"><%:qckgd_static%></a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div id="pppoe_table" name="inter_access_meth_table" style="display: none;" value="<%:qckgd_pppoe%>">
+                <div class="guide_internet_set_div">
+                    <span><%:qckgd_pppoe_user%></span>
+                    <input name="pppoeUser" id="pppoeUser" value="<%=uci_t:get("network","wan","username")%>"/>
+                </div>
+                <div class="guide_internet_set_div">
+                    <span><%:qckgd_pppoe_pwd%></span>
+                    <input type="password" name="pppoePass" id="pppoePass" value="<%=uci_t:get("network","wan","password")%>"/>
+                    <img class="icon_eye" src="<%=media%>/images/icon_visible_off.png" onclick='hide_show_passwd(this,$(this).prev())'>
+                </div>
+            </div>
+            <div id="static_table" name="inter_access_meth_table" style="display:none" value='<%:qckgd_static%>'>
+                <div class="guide_internet_set_div">
+                    <span><%:IP address%>：</span>
+                    <input name="staticIp" id="staticIp" value='<%=uci_t:get("network","wan","ipaddr")%>'>
+                </div>
+                <div class="guide_internet_set_div">
+                  <span><%:Netmask%>：</span>
+                  <input name="staticNetmask" id="staticNetmask" value='<%=uci_t:get("network","wan","netmask")%>'/>
+                </div>
+                <div class="guide_internet_set_div">
+                 <span ><%:Default gateway%>：</span>
+                 <input name="staticGateway" id="staticGateway" value='<%=uci_t:get("network","wan","gateway")%>'/>
+                </div>
+                <div class="guide_internet_set_div">
+                <span><%:qckgd_dns_service%></span>
+                <input name="staticPriDns" id="staticPriDns" value='<%=uci_t:get("network","wan","dns")%>'/>
+                </div>
+            </div>
+            <div class="guide_bt_div">
+                <button id="find_pppoe_passwd_bt" type="button" class="guide_button" style="width: 100px;height: 34px;" onclick="find_pppoe_passwd_page()">找回宽带密码
+                </button>
+				<button id="next_bt" type="button" class="guide_button" style="width: 80px;height: 34px;" onclick="next_page()"><%:qckgd_next_step%>
+				</button>
+
+            </div>
+        </div>
+    </div>
+    <% if 1 == fromautodetect then %>
+    <div class="modal fade" id="wan_check_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="check_wan_dialog modal-content" role="document">
+            <img src="<%=media%>/images/load.gif" alt="<%:Loading%>" class="loading_img" />
+            <span class="loading_msg_span"><%:qckgd_auodetecting_des%></span>
+        </div>
+    </div>
+    <% end %>
+    <button type="button" style="display:none" data-toggle="modal" data-target="#ProofModal" id="paramcheck"></button>
+    <div class="modal fade" id="ProofModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="proof_modal_dialog" role="document">
+            <div class="modal-content proof_modal_content">
+                <div class="proof_msg_div">
+                    <span id="error_des"></span>
+                </div>
+                <div class="proof_button_div">
+                    <div class="btn proof_confirm_button"  data-dismiss="modal">
+                    <span class="proof_button_span"><%:qckgd_confirm%></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="guide_bottom_left"></div>
+<div class="guide_fotter">
+    <span class="hotline_span"><%:phicomm license%></span>
+    <span class="mac_span"><%:MAC Address%>：<%=uci_t:get("network","wan","macaddr")%></span>
+    <span class="software_version_span"><%:software version%>：<%=pcdata(luci.phicommproduct.softversion)%></span>
+</div>
+</body>
+<script type="text/javascript">
+    var wancnectstus = 0;
+    $(".interAccessMeth").next("ul").children("li").click(function(){
+        var str = $(this).children("a").html();
+        $("[name='inter_access_meth_table']").css("display","none");
+        $("[value='"+str+"']").css("display","block");
+
+        var str_value = $(this).attr("value");
+        document.internet_setting.connectionType.value = str_value;
+        document.internet_setting.autodetect.value = 0;
+    });
+    
+    function dnscheck()
+    {
+        document.internet_setting.cbi_validators = null;
+        cbi_validate_field('staticPriDns', false, 'ipv4', '<%:qckgd_dns_service%>', error_msg);
+    }
+    function selectchange(selectvalue)
+    {
+        document.internet_setting.cbi_validators = null;
+        if(selectvalue == "STATIC")
+        {
+            cbi_validate_field('staticIp', false, 'ipv4', '<%:IP address%>:', error_msg);
+            cbi_validate_field('staticNetmask', false, 'ipv4mask', '<%:Netmask%>:', error_msg);
+            cbi_validate_field('staticGateway', false, 'ipv4', '<%:Default gateway%>:', error_msg);
+        }
+        else if(selectvalue == "PPPOE")
+        {
+            cbi_validate_field('pppoeUser', false, 'and(sperangelength(1,32),checkPPPspechar,blank)', '<%:qckgd_pppoe_user%>', error_msg);
+            cbi_validate_field('pppoePass', false, 'and(rangelength(1,32),checkPPPspechar_cn,blank)', '<%:qckgd_pppoe_pwd%>', error_msg);
+        }
+    }
+
+    function netOrBroadAddr(IP, MASK, SoE)
+    {                                                                                
+        var IP_AMOUNT_MAX = 256;                                                 
+        var ip = IP.split(".");                                         
+        var mask = MASK.split(".");                                     
+        var i;                                                          
+
+        for(i=0;i<ip.length;i++)                                   
+        {                             
+            /* SoE=0:show this Network IP ; SoE=1:show this Network Broadcast IP */
+            if(SoE==1)                                                             
+            {                                                                                                         
+                mask[i] = ~mask[i] + IP_AMOUNT_MAX;                            
+                ip[i] = ip[i] | mask[i];                                       
+            }                                                                      
+            else                                                                   
+                ip[i] = ip[i] & mask[i];                                       
+        }                                                                              
+        return ip.join(".");                                                           
+    }             
+    
+    var i = 0;
+    var width = 0;
+    var percent_text = 0;
+    var t;
+    
+    function wan_link_judge()
+    {
+        $.ajax({
+            type:"post",
+            url:"/LocalCheckWanStatus.asp?action=get",
+            success:function(s){
+                if(s)
+                {
+                    if(s.phy_connect == 1)
+                    {
+                        $("#guide_msg_span1").removeClass("icon-break");
+                        $("#guide_msg_span1").addClass("icon-connect");
+                        $("#guide_msg_span1").attr("style","color:#319633");
+                        $("#guide_msg_span2").html("<%:qckgd_wan_connect_ok%>")
+                        wancnectstus = 1;
+                    }
+                    else
+                    {
+                        $("#guide_msg_span1").removeClass("icon-connect");
+                        $("#guide_msg_span1").addClass("icon-break");
+                        $("#guide_msg_span1").attr("style","color:#E60012");
+                        $("#guide_msg_span2").html("<%:qckgd_wan_connect_fail%>")
+                        wancnectstus = 0;
+                    }
+                }
+                setTimeout("wan_link_judge()", 2000);
+            }
+            }
+            );
+    }
+    wan_link_judge();
+    
+    function autodetect_submit()
+    {
+        if(wancnectstus)
+        {
+            document.internet_setting.autodetect.value = 1;
+            setTimeout("save()", 200);
+        }
+        else
+        {
+            showerror("<%:qckgd_wan_connect_fail%>");
+        }
+    }
+    
+    function save()
+    {
+        document.internet_setting.submit();
+    }
+    
+    function next_page()
+    {
+        document.internet_setting.autodetect.value = 0;
+
+        if(document.internet_setting.connectionType.value == "STATIC")
+        {
+            if($("#staticNetmask").val() == "255.255.255.255"){
+                showerror("<%:netmask_4_255%>");
+                return false;
+            }
+            
+            selectchange(document.internet_setting.connectionType.value);
+            if(!cbi_validate_form(document.internet_setting, null,showerror))
+            {
+                return false;
+            }
+            
+            var lan_ip = "<%=uci_t:get("network","lan","ipaddr")%>";
+            var nm = "<%=uci_t:get("network","lan","netmask")%>";
+            var net_1, net_2, net_3, net_4;
+            net_1 = netOrBroadAddr($("#staticIp").val(), nm, 0);
+            net_2 = netOrBroadAddr(lan_ip, nm, 0);
+            net_3 = netOrBroadAddr($("#staticIp").val(), $("#staticNetmask").val(), 0);
+            net_4 = netOrBroadAddr(lan_ip, $("#staticNetmask").val(), 0);
+            if(net_1==net_2 || net_3 == net_4 )
+            {
+                showerror("<%:wanip_lanip_same_subnet%>");
+                return false;
+            }
+
+            if($("#staticIp").val() == $("#staticGateway").val()){
+                showerror("<%:ipaddr_gateway_same%>");
+                return false;
+            }
+
+            var ipnet1, ipnet2;
+            ipnet1 = netOrBroadAddr($("#staticIp").val(), $("#staticNetmask").val(), 0);
+            ipnet2 = netOrBroadAddr($("#staticGateway").val(), $("#staticNetmask").val(), 0);
+            if(ipnet1 != ipnet2){
+                showerror("<%:ipaddr_gateway_same_subnet%>");
+                return false;
+            }
+            dnscheck();
+            if(!cbi_validate_form(document.internet_setting, null,showerror))
+            {
+                return false;
+            }
+            if($("#staticPriDns").val() == $("#staticIp").val()){
+                showerror("<%:dns_ipaddr_same%>");
+                return false;
+            }
+            setTimeout("save()", 200);
+        }
+        else
+        {
+            selectchange(document.internet_setting.connectionType.value);
+            if(!cbi_validate_form(document.internet_setting, null,showerror))
+            {
+                return false;
+            }
+            setTimeout("save()", 200);
+        }
+    }
+    <% if 1 == fromautodetect then %>
+    var str = 0;
+    var time1 = 0;
+
+    function myModalhide(){
+
+        $("#close_progress_button").click();
+        document.internet_setting.autodetect.value = 2;
+        setTimeout("save()", 200);
+    }
+    function processstatus(secs){
+        str = 0;
+        var times = secs*10;
+        $("#wan_check_modal").modal("show");
+        time1=setInterval("test()",times);
+    }
+
+    function test(){
+        str=str+1;
+        if(str>= 100){
+           clearInterval(time1);
+           $("#wan_check_modal").modal("hide");
+           myModalhide();
+        }
+        if(str%20 == 0)
+        {
+        $.ajax({
+            type:"post",
+            url:"/LocalCheckDetectFinish.asp?action=get",
+            success:function(s)
+            {
+              if(s.detectval == 1)
+              {
+                    clearInterval(time1);
+                    $("#wan_check_modal").modal("hide");
+                    myModalhide();
+              }
+            }
+            }
+            );
+        }
+   }
+   processstatus(10);
+   <%end%>
+   function showerror(errmsg)
+   {
+    $("#error_des").html(errmsg);
+    $("#paramcheck").click();
+}
+
+	function find_pppoe_passwd_page()
+	{
+		window.location.href="<%=luci.dispatcher.build_url("admin", "quickguide", "find_pppoe_passwd")%>";
+	}
+</script>
+</html>

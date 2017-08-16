@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<% 
+local uci_t = luci.model.uci.cursor()
+local ssid = nil
+local key = nil
+local inic_ssid = nil
+local inic_key = nil
+local firststart = "0"
+firststart = uci_t:get("luci", "main", "firststart")
+uci_t:foreach("wireless", "wifi-iface",
+    function(s)
+        if s.ifname == "ra0" then
+            if s.ssid then
+                ssid = s.ssid
+            end
+        end
+        if s.ifname == "ra0" then
+            if s.key then
+                key = s.key
+            end
+        end
+
+        if s.ifname == "rai0" then
+            if s.ssid then
+                inic_ssid = s.ssid
+            end
+        end
+   
+        if s.ifname == "rai0" then
+            if s.key then
+                inic_key = s.key
+            end
+        end
+    end)
+%>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+    <% include("themes/" .. theme .. "/multlangjs") %>
+    <script type="text/javascript" src="<%=media%>/js/base64Encode.js"></script>
+    <%+title%>
+</head>
+<body>
+<form method="post" name="wirelessset" action="<%=luci.dispatcher.build_url("admin", "h5", "wirelessset")%>">
+    <div class="setcontent">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>
+        <input name="savevalidate" value="1" type="hidden">        
+        <div class="title-underline"></div>
+        <div class="margintop-1"  id="img_back">
+            <% if "0" == firststart then %>
+            <img id="back2link" src="<%=media%>/images/back_yellow.png" />
+            <% end %>
+            <span class="title-span" style="font-size: 20px;color: #F08300;">无线设置</span>
+        </div>
+        <div class="set-linediv" id="wlset_div">
+            <hr />
+            <div class="input-group input-r">
+                <span class="input-group-addon">2.4G 无线名称</span>
+                <input type="text" class="form-control" name="ssid" id="ssid" value="<%=ssid%>">
+            </div>    
+            <hr />
+            <div class="input-group input-r">
+                <span class="input-group-addon">2.4G 无线密码</span>
+                <input type="password" class="form-control" name="key" id="key" value="<%=key%>">
+            </div>
+            <hr />
+            <div class="input-group input-r">
+                <span class="input-group-addon">5G 无线名称</span>
+                <input type="text" class="form-control" name="inic_ssid" id="inic_ssid" value="<%=inic_ssid%>" style="text-indent: 0.9em;">
+            </div>    
+            <hr />
+            <div class="input-group input-r">
+                <span class="input-group-addon">5G 无线密码</span>
+                <input type="password" class="form-control" name="inic_key" id="inic_key" value="<%=inic_key%>" style="text-indent: 0.9em;">
+            </div>
+            <hr />
+        </div>                    
+        <div class="set-linediv" id="passwdNote">
+            密码至少8位，且区分大小写
+        </div>    
+        <div class="set-linediv" id="managepwd">
+            <div class="input-group input-l">
+                <input type="hidden" value="0" name="managerPasswd" />
+                <input type="text" class="form-control" readonly="readonly" value="管理员密码与2.4G无线密码相同">        
+                <span class="input-group-addon"><img id="img_switch" src="<%=media%>/images/switch_off.png" /></span>        
+            </div>    
+            <div class="input-group input-r margintop-2" id="managerpwd" style="opacity: 1;">
+                <span class="input-group-addon">管理员密码</span>
+                <input type="password" class="form-control" name="password" id="admin_pwd" value="">
+                <input name="username" value="<%=uci_t:get("system","weblogin","username")%>" type="hidden">
+            </div>
+            <div class="margintop-10 marginbottom-2">
+                <button type="button" class="btn-square-lg" id="save-btn">保存并重启</button>
+            </div>                
+        </div>         
+    </div>
+    <div class="full-bg"></div>
+    <footer class="showorhide" style="height: 133px;position: fixed;bottom: 0;">
+        <div class="set-linediv" id="wlpwd" style="background-color: #FFFFFF;display: none;">
+            <div style="color: #A6A6A6;">
+                2.4G或5G无线密码为空，将会影响网络安全<br />是否确认保存并重启？
+            </div>
+            <hr />
+            <div type="button" id="save_reset" style="color: #FF0000;height: 2em;line-height: 2em; font-size: 1.5em;">保存并重启</div>                                                   
+        </div>
+        <div class="set-linediv" id="rootpwd" style="background-color: #FFFFFF;display: none;">
+            <div style="color: #A6A6A6;">管理员密码不能为空<br />请返回设置管理员密码</div>                                                                
+        </div>    
+        <div type="button" id="cancle_btn">取消</div>    
+    </footer>                
+</form>
+</body>
+<script>    
+    $(function(){
+        $("#img_switch").click(function(){
+            var val = $("input[name='managerPasswd']").val();
+            var pwd_2g = $("input[name=key]").val();
+            
+            if( val == 0 ){
+                $("#img_switch").attr("src","<%=media%>/images/switch_on.png");
+                $("input[name='managerPasswd']").val("1");
+                $("#managerpwd").css("opacity","0");
+                $("input[name=password]").val(pwd_2g);
+            }else{
+                $("#img_switch").attr("src","<%=media%>/images/switch_off.png");
+                $("input[name='managerPasswd']").val("0");
+                $("#managerpwd").css("opacity","1");
+            }            
+        });    
+        
+        $("#save-btn").click(function(){
+            var pwd_2g = $("input[name=key]").val();
+            var pwd_5g = $("input[name=inic_key]").val();
+            var root_pwd = $("input[name=password]").val();
+            
+            if($("input[name='managerPasswd']").val()==1){
+                root_pwd = pwd_2g;
+            }
+            
+            paramcheck();
+            if(!cbi_validate_form(document.wirelessset, null,showerror))
+            {
+                return false;
+            }
+            $("#admin_pwd").val(base64encode(utf16to8($("#admin_pwd").val())));
+
+            if(pwd_2g.length <= 0 || pwd_5g.length <= 0){
+                $(".showorhide").show();
+                $(".full-bg").show();
+                $("#wlpwd").show();
+                $("#rootpwd").hide();
+            }else if(root_pwd.length <= 0){
+                $(".showorhide").show();
+                $(".full-bg").show();
+                $("#wlpwd").hide();
+                $("#rootpwd").show();
+            }else{
+                $(".showorhide").hide();
+                    document.wirelessset.submit();
+            }
+        });
+        
+        $("#save_reset").click(function(){
+            $(".showorhide").hide();
+            $(".full-bg").hide();
+            document.wirelessset.submit();
+        });
+        
+        $("#cancle_btn").click(function(){
+            $(".showorhide").hide();
+            $(".full-bg").hide();
+        });            
+    });
+    
+    function sync2gssidto5gssid()
+    {
+        $("#inic_ssid").val($("#ssid").val());
+    }
+    
+    function sync2gkeyto5gkey()
+    {
+        if($("#ssid").val() == $("#inic_ssid").val())
+        {
+            $("#inic_key").val($("#key").val());
+        }
+    }
+    
+    function paramcheck()
+    {
+        var pwdstatus = $("input[name='managerPasswd']").val();
+        document.wirelessset.cbi_validators = null;
+        if(pwdstatus == "1")
+        {
+            document.wirelessset.password.value = document.wirelessset.key.value;
+        }
+        cbi_validate_field('ssid', false, 'and(sperangelength(1,32),checkWirelessspechar)', '<%:qckgd_24g_ssid%>', error_msg);
+        cbi_validate_field('key', true, 'and(wpakey,checkWirelessspechar)', '<%:qckgd_24g_pwd%>', error_msg);
+        cbi_validate_field('inic_ssid', false, 'and(sperangelength(1,32),checkWirelessspechar)', '<%:qckgd_5g_ssid%>', error_msg);
+        cbi_validate_field('inic_key', true, 'and(wpakey,checkWirelessspechar)', '<%:qckgd_5g_pwd%>', error_msg);
+        cbi_validate_field('admin_pwd', false, 'and(wpakey_minlen_5,checkWirelessspechar)', '<%:qckgd_admin_pwd%>', error_msg);
+    }
+    function showerror(errmsg)
+    {
+        alert(errmsg);
+    }
+    <% if "0" == firststart then %>
+    $("#back2link").click(function(){
+        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "link")%>";
+    });
+    <% end %>
+
+</script>
+</html>

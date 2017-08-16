@@ -1,0 +1,62 @@
+<% export("cbi_apply_xhr", function(id, configs, redirect) -%>
+<%
+local disp = require "luci.dispatcher"
+local request  = disp.context.path
+%>
+<div class="modal fade" id="effectModal" tabindex="-1" role="dialog">
+	<div class="modal-content loading_modal_div " role="document">
+		<img src="<%=media%>/images/load.gif" class="loading_img" />
+		<span id="cbi-apply-<%=id%>-status" class="loading_msg_span">生效中...</span> 
+	</div>
+</div>
+<fieldset class="cbi-section" id="cbi-apply-<%=id%>">
+	
+	<script type="text/javascript">
+		$("#effectModal").modal("show");
+		var apply_xhr = new XHR();
+		apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "restart", table.concat(configs, ","))%>', null,
+			function() {
+				<%if request[2] == "networkset" or request[2] == "wifiset" then%>
+					function refresh_loaction(){
+						location.href = location.href;
+
+					}
+					setTimeout(function(){lanDetecting(refresh_loaction)}, 30000);
+				<%else%>
+				var checkfinish = function() {
+					apply_xhr.get('<%=luci.dispatcher.build_url("servicectl", "status")%>', null,
+						function(x) {
+							if( x.responseText == 'finish' )
+							{
+								var e = document.getElementById('cbi-apply-<%=id%>-status');
+								if( e )
+								{
+									// e.innerHTML = '<%:Configuration applied.%>';
+									window.setTimeout(function() {
+										e.parentNode.style.display = 'none';
+										$("#effectModal").modal("hide");
+										<% if redirect then %>location.href='<%=redirect%>';
+										<% else %>
+										location.href = location.href;
+										<% end %>
+									}, 1000);
+								}
+							}
+							else
+							{
+								//var e = document.getElementById('cbi-apply-<%=id%>-status');
+								//if( e && x.responseText ) e.innerHTML = x.responseText;
+
+								window.setTimeout(checkfinish, 1000);
+							}
+						}
+					);
+				}
+				window.setTimeout(checkfinish, 1000);
+				<%end%>
+			}
+		);
+	</script>
+	
+</fieldset>
+<%-	end) %>

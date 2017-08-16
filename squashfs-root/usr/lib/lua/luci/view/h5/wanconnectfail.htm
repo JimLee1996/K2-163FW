@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>       
+    <%+title%>
+</head>
+<body>
+    <div class="setcontent">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="margintop-5" style="height: 30%;">
+            <img class="width-100" style="height: 100%;" id="wanstatus" src="<%=media%>/images/wanfail.jpg"/>
+        </div>
+        <div id="wan_check_res_disconnect" class="margintop-20">
+            <span>
+                WAN口未连接，<br />
+                请检查网线是否已插好！
+            </span>                
+        </div>
+        <div id="wan_check_res_connect" class="margintop-20" style="display:none">
+            <span>
+                WAN口已连接成功！
+            </span>                
+        </div>
+        <div class="modal fade margintop-20" id="myModal">
+            <div class="modal-dialog">
+                <div class="modal-content" style="background-color: #F5F5F5;">
+                    <div class="msg2"><img src ="<%=media%>/images/load_gray.gif" /></div>
+                    <div class="msg1">正在检测上网方式</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer name="footer_wan_conect_fail" style="margin-bottom:5px ;">
+        <button type="button" class="btn-square-sm" name="manulset" id="auto_set" onclick="gotointernetset()">手动设置</button>
+        <button type="button" class="btn-square-sm" name="skip" id="skip" onclick="gotowirelessset()">跳过</button>            
+    </footer>
+    <footer name="footer_wan_conect_succ" style="margin-bottom:5px;display:none">
+        <button type="button" class="btn-square-lg" name="next_step" id="next_step" onclick="gotonextstep()"><%:qckgd_next_step%></button>    
+    </footer>
+</body>
+<script>
+    function gotointernetset()
+    {
+        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "force2internetset")%>";
+    }
+    
+    function gotowirelessset()
+    {
+        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "wirelessset")%>";
+    }
+    
+    var timer1 = 0;
+    var counter = 0;
+    function h5autodetect(){
+        $.ajax({
+            type:"post",
+            url:"<%=luci.dispatcher.build_url("admin","h5","autodetect")%>",
+            data:{
+                action:"detect"
+            },
+            error: function(request) {
+                Alert("<%:parentctl_connect_fail%>");
+            },
+            success: function(msg){
+                if (msg.status == "success")
+                {
+                    $("#myModal").modal('show');
+                    timer1=setInterval("timeoutfunc()",2000);
+                }
+            }
+        });
+    }
+    function timeoutfunc(){
+        counter=counter+1;
+        if(counter>=5){
+            clearInterval(timer1);
+            gotoautodetectfinish();
+        } else {
+            $.ajax({
+            type:"post",
+            url:"/LocalCheckDetectFinish.asp?action=get",
+            success:function(s)
+            {
+              if(s.detectval == 1)
+              {
+                    clearInterval(timer1);
+                    gotoautodetectfinish();
+              }
+            }
+            }
+            );
+        }
+    }
+    function gotoautodetectfinish()
+    {
+        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "autodetectfinish")%>";
+    }
+    
+    function gotonextstep()
+    {
+        h5autodetect();
+    }
+    
+    function wan_link_judge()
+    {
+        $.ajax({
+        type:"post",
+        url:"/LocalCheckWanStatus.asp?action=get",
+            success:function(s){
+                if(s)
+                {
+                    if(s.phy_connect == 1)
+                    {
+                        $("[name='footer_wan_conect_fail']").css("display","none");
+                        $("[name='footer_wan_conect_succ']").css("display","block");
+                        $("[id='wan_check_res_disconnect']").css("display","none");
+                        $("[id='wan_check_res_connect']").css("display","block");
+                        $("#wanstatus").attr("src","<%=media%>/images/wanok.jpg");
+                    }
+                    else if(s.phy_connect == 0)
+                    {
+                        $("[id='wan_check_res_disconnect']").css("display","block");
+                        $("[id='wan_check_res_connect']").css("display","none");
+                        $("[name='footer_wan_conect_fail']").css("display","block");
+                        $("[name='footer_wan_conect_succ']").css("display","none");
+                        $("#wanstatus").attr("src","<%=media%>/images/wanfail.jpg");
+                    }
+                }
+                setTimeout("wan_link_judge()", 2500);
+            }
+        }
+        );    
+    }
+    setTimeout("wan_link_judge()", 3000);
+</script>
+</html>

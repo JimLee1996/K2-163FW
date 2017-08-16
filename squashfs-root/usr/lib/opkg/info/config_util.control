@@ -1,0 +1,10 @@
+Package: config_util
+Version: 1
+Depends: libc, phicomm_libs
+Source: package/phicomm/config_util
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 2073
+Description:  该工具用来读写Config分区，目前主要功能：
+ 1.从Config分区中读写用户协议内容
+ 2.读写版本信息

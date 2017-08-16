@@ -1,0 +1,55 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016 www.phicomm.com
+
+START=90
+
+cfg_reload() {
+	local DIR="-c /var/state"
+	local BASE_DEVICE="base_device"
+	local ARP_SET="/sbin/arp"
+	local section_name=$1
+	local TYPE
+	local MAC
+	local IP
+	local if_type
+	local block_user
+	local tx_rate
+	local rx_rate
+
+	config_get  MAC "$section_name" mac
+	config_get  block_user "$section_name" block_user
+	TYPE="$(uci $DIR get $BASE_DEVICE.$section_name)"
+
+	if [ $block_user -ne 0 ]; then
+		config_get  if_type "$section_name" if_type
+		if [ "$if_type" = "0" ]; then
+			arptables -A INPUT --src-mac $MAC -j DROP
+			$ARP_SET -d $IP
+		fi
+	elif [ "$TYPE" = "online" ]; then
+		IP="$(uci $DIR get $BASE_DEVICE.$section_name.ip)"
+		config_get  tx_rate "$section_name" tx_rate
+		config_get  rx_rate "$section_name" rx_rate
+		if [ $tx_rate -gt 0 ]; then
+			iptables -t mangle -w -A limit_chain --src $IP -m hashlimit --hashlimit-name src_$section_name \
+				--hashlimit ${tx_rate}kb/s --hashlimit-burst ${tx_rate}kb/s --hashlimit-mode srcip -j RETURN >/dev/null 2>&1
+			iptables -t mangle -w -A limit_chain --src $IP -j DROP >/dev/null 2>&1
+		fi
+		if [ $rx_rate -gt 0 ]; then
+			iptables -t mangle -w -A limit_chain --dst $IP -m hashlimit --hashlimit-name dst_$section_name \
+				--hashlimit ${rx_rate}kb/s --hashlimit-burst ${rx_rate}kb/s --hashlimit-mode dstip -j RETURN >/dev/null 2>&1
+			iptables -t mangle -w -A limit_chain --dst $IP -j DROP >/dev/null 2>&1
+		fi
+	fi
+}
+
+start() {
+	iptables -t mangle -w -F limit_chain >/dev/null 2>&1
+	iptables -t mangle -w -D FORWARD -j limit_chain > /dev/null 2>&1
+	iptables -t mangle -w -X limit_chain >/dev/null 2>&1
+	iptables -t mangle -w -N limit_chain >/dev/null 2>&1
+	iptables -t mangle -w -I FORWARD -j limit_chain > /dev/null 2>&1
+	config_load device_manage
+	config_foreach cfg_reload limit
+}
+

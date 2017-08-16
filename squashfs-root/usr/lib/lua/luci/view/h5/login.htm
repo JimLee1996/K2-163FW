@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<% 
+local uci_t = luci.model.uci.cursor()
+%>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/base64Encode.js"></script>
+    <% include("themes/" .. theme .. "/multlangjs") %>   
+    <%+title%>
+</head>
+<body>
+<form method="post" name="h5login" action="<%=luci.dispatcher.build_url("admin", "h5", "login")%>">
+    <div class="setcontent">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="title-underline"></div>
+        <div class="set-linediv">
+            <div class="input-group input-r">
+                <span class="input-group-addon">管理员密码</span>
+                <input name="username" value="<%=uci_t:get("system","weblogin","username")%>" type="hidden">
+                <input type="password" class="form-control" name="password" id="password">
+                <input name="login" value="h5login" type="hidden">
+            </div>    
+            <div style="text-align: left;padding-left: 1%;color: #A6A6A6;font-size: 0.8em;">初始管理员密码为admin</div>
+        </div>
+        <div class="margintop-10 marginbottom-2">
+            <button type="button" class="btn-square-lg" onclick="nextpage()">登录</button>
+        </div>
+        <div class="margintop-10">
+            <a id="pc_web" onclick="gotoindex()">进入电脑版页面</a>
+        </div>
+    </div>
+    <footer>
+        <div>©2016上海斐讯数据通信技术有限公司</div>
+    </footer>
+</form>
+</body>
+<script>
+
+    $(function(){ 
+        document.onkeydown = function(e){ 
+            var ev = document.all ? window.event : e; 
+            if(ev.keyCode==13) { 
+               nextpage(); 
+            } 
+        } 
+    });  
+
+    function gotoindex()
+    {
+        window.location.href="<%=luci.dispatcher.build_url("admin", "index")%>";
+    }
+    function nextpage()
+    {
+        document.h5login.cbi_validators = null;
+        cbi_validate_field('password', false, 'and(wpakey_minlen_5,checkWirelessspechar)', '<%:qckgd_admin_pwd%>', error_msg);
+        if(!cbi_validate_form(document.h5login, null,showerror))
+        {
+            return false;
+        }
+        $("#password").val(base64encode(utf16to8($("#password").val())));
+        document.h5login.submit();
+    }
+    function showerror(errmsg)
+    {
+        if ($("#password").val().length <=0 ) {
+            alert("管理员密码不能为空，请输入管理员密码"); 
+        }else{
+            alert("管理员密码错误，请重新输入");
+        }
+                       
+    }
+    
+    <% if fuser then %>
+        alert("管理员密码错误，请重新输入");
+    <% end -%>
+    
+</script>
+</html>

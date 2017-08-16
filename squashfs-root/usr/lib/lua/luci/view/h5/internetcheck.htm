@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script> 
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>  
+    <%+title%>
+</head>
+<body>
+    <div class="setcontent" style="height: 100%;">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="margintop-5" style="height: 55%;">
+            <img class="width-100" src="<%=media%>/images/wanfail.jpg" style="height: 100%;" />
+        </div>        
+        <div id="wan_check_fail" style="margin-top:30px;">
+            <span>
+                互联网连接失败，请检查WAN口相关设置，<br />
+                或进入<a id="advanced_set">路由器高级配置</a>查看详情
+            </span>                
+        </div>
+    </div>
+    <footer style="margin-bottom: 5px;">
+        <button type="button" class="btn-square-lg" name="backconf" id="back_reconf">返回重新配置</button>
+    </footer>
+</body>
+<script>
+    function clearstok()
+    {
+        XHR.get('<%=luci.dispatcher.build_url("admin", "h5", "clearcursession")%>',null,
+            function(x,s){
+                if(s)
+                {
+                    if(s[0].stokclear != "success")
+                    {
+                        setTimeout("clearstok()", 1000);
+                    }
+                }
+                else
+                {
+                    setTimeout("clearstok()", 1000);
+                }
+            }
+        );    
+    }
+    clearstok()
+    
+    $("#advanced_set").click(function(){
+        window.location.href="/cgi-bin/luci/admin/index";
+    });
+
+    $("#back_reconf").click(function(){
+        window.location.href="/cgi-bin/luci/admin/h5/login";
+    });
+    
+</script>
+</html>

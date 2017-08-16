@@ -1,0 +1,37 @@
+#!/bin/sh
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+local dhcpd_enable dhcp_start dhcp_end dhcp_static_rules_str
+local start end limit
+local section_name
+
+dhcpd_enable=`nvram get linux dhcpd_enable 2>/dev/null`
+dhcp_start=`nvram get linux dhcp_start 2>/dev/null`
+dhcp_end=`nvram get linux dhcp_end 2>/dev/null`
+dhcp_static_rules_str=`nvram get linux dhcp_static_rules_str 2>/dev/null`
+
+start=${dhcp_start##*.}
+end=${dhcp_end##*.}
+limit=$(($end-$start+1))
+section_name='lan'
+
+#配置ip/mac绑定列表
+dhcp_static_rules_str=`echo $dhcp_static_rules_str | sed 's/ /,/g'`
+local i=0
+for keystr  in `echo $dhcp_static_rules_str | sed 's/|/ /g'`; do
+	mac=${keystr%,*}
+	ip=${keystr#*,}
+
+	uci add dhcp host && \
+	uci set dhcp.@host[$i]=host && \
+	uci set dhcp.@host[$i].ip=$ip && \
+	uci set dhcp.@host[$i].mac=$mac && \
+	uci commit dhcp && \
+	let i+=1 || uci delete dhcp.@host[$i]
+done
+
+#配置dhcp server
+uci set dhcp.$section_name.start=$start && \
+uci set dhcp.$section_name.limit=$limit && \
+uci commit dhcp

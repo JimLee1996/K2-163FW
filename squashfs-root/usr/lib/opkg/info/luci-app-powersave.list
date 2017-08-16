@@ -1,0 +1,5 @@
+/usr/lib/lua/luci/controller/admin/powersave.lua
+/usr/lib/lua/luci/model/cbi/powersave.lua
+/usr/lib/lua/luci/i18n/powersave.zh-cn.lmo
+/etc/nvram2uci/powersave
+/etc/config/powersave

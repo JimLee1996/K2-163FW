@@ -1,0 +1,2 @@
+config DMZ 'DMZ'
+	option enable '0'

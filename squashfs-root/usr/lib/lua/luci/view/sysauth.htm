@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<%
+	local disp = require "luci.dispatcher"	
+	local request = disp.context.request
+	require "luci.fs"
+	require "luci.phicommproduct"
+	local uci_t = require "luci.model.uci".cursor()
+	
+	data ={                           
+            wan         = {}                     
+            } 
+	local has_network = luci.fs.stat("/etc/config/network")
+	
+	if has_network then
+        data.wan.ifname        = uci_t:get("network","wan","ifname")    
+        if data.wan.ifname == "apcli0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apcli0 | grep HWaddr | cut -c 39-55") 
+        elseif data.wan.ifname == "apclii0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apclii0 | grep HWaddr | cut -c 39-55") 
+        else   
+            if uci_t:get("network","wan", "ignore") == "1" then
+                data.wan.macaddr    = uci_t:get("network","wan","macaddr")
+            else
+                data.wan.macaddr    = uci_t:get("network","wan","mac_addr")
+            end
+        end
+
+        data.wan.proto        = uci_t:get("network","wan","proto")
+    else
+        data.wan.macaddr    = "00:00:00:00:00:00" 
+    end
+	
+	function get_wan_mac()                                                                  
+    	local mac = "00:00:00:00:00:00"   
+
+    	if data.wan.macaddr then
+       	 mac = data.wan.macaddr          
+    	end                                                
+    return mac    
+end   
+%>
+<html>
+<head> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no"/> 
+	<%+title%>
+	<link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+	<link rel="stylesheet" href="<%=media%>/css/login.css">
+	<script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+	<script type="text/javascript" src="<%=media%>/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+	<script type="text/javascript" src="<%=media%>/js/base64Encode.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+    <script type="text/javascript">
+    	function Alert(var_str,var_cancle) {
+    		$("#alert_msg").html(var_str);
+    		if(var_cancle == true){
+    			$("#cancel_bt").css("display","inline-block");
+    		}
+    		$("#myAlert").modal("show");
+    	}
+
+		$(function(){
+			var isIE = document.all ? true : false;
+			if (isIE) {
+				var check=navigator;
+				var b_version=navigator.appVersion;
+				var version=b_version.split(";");
+				var trim_Version=version[1].replace(/[ ]/g,"");
+				if(check.appName=="Microsoft Internet Explorer") {
+					var ver_num = trim_Version.substring(4,5);
+					if (ver_num < 9) {
+						$("#browserModal").modal("show");
+					} else {
+						$("#browserModal").modal("hide");
+					}
+				}
+			}
+		});
+    </script>
+	 <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="<%=media%>/js/html5shiv.js"></script>
+  <script src="<%=media%>/js/respond.min.js"></script>
+  <![endif]-->
+	<% include("themes/" .. theme .. "/multlangjs") %>
+	<script type="text/javascript">
+		$(function(){
+			$(".img_change").click(function(){
+				var img_src = $(this).attr("src");
+				var img = img_src.substring(0,img_src.length-6);
+				var img_i = img_src.substring(img_src.length-6,img_src.length-4);
+				if(img_i == "on"){
+					$(this).attr("src",img+"off.png");
+					document.frm.remember.checked = false;
+				}else{
+					$(this).attr("src",img+"n.png");
+					document.frm.remember.checked = true;
+				}
+			});
+			$('.content_body').niceScroll({
+				cursorcolor: "#CCCCCC",
+				cursoropacitymax: 1, 
+				touchbehavior: false, 
+				cursorwidth: "10px", 
+				cursorborder: "0", 
+				cursorborderradius: "5px",
+				autohidemode: false 
+			});
+		});
+		function changePage(value){
+            if(value == 1){
+                $(".pwd_span").css("display","none");
+                $(".remember_pwd_div").css("display","none");
+                $(".pwd_input").css("width","282px");
+                $(".pwd_input").attr("placeholder","请输入管理员密码");
+                $(".login_button_div").css("margin-top","50px");
+                $(".login_button_div button").html("立即升级");
+            }
+        }
+		function setCookie(name,value,hours,path){
+			var name = escape(name);
+			var value = escape(value);
+			var expires = new Date();
+			expires.setTime(expires.getTime() + hours*3600000);
+			path = path == "" ? "" : ";path=" + path;
+			_expires = (typeof hours) == "string" ? "" : ";expires=" + expires.toUTCString();
+			document.cookie = name + "=" + value + _expires + path;
+		}
+
+		function getCookieValue(name){
+			var name = escape(name);
+
+			var allcookies = document.cookie;       
+
+			name += "=";
+			var pos = allcookies.indexOf(name);    
+
+			if (pos != -1){                                             
+				var start = pos + name.length;                 
+				var end = allcookies.indexOf(";",start);        
+				if (end == -1) end = allcookies.length;       
+				var value = allcookies.substring(start,end); 
+				return unescape(value);                           
+			}   
+			else return "";                              
+		}
+
+		function deleteCookie(name,path){
+			var name = escape(name);
+			var expires = new Date(0);
+			path = path == "" ? "" : ";path=" + path;
+			document.cookie = name + "="+ ";expires=" + expires.toUTCString() + path;
+		}		
+
+		function check(){
+
+			document.frm.action_mode.value = 'apply';
+			document.frm.action_url.value = this.location.href;
+			var password=document.frm.password.value;
+
+			if(document.frm.password.value=="")
+			{
+				Alert("管理员密码不能为空，请输入管理员密码");
+				document.frm.password.focus();
+				return false;
+			}
+
+			document.frm.cbi_validators = null;
+			cbi_validate_field('admin_pwd', false, 'and(wpakey_minlen_5,checkWirelessspechar)', '<%:sysauth key%>', error_msg);
+			
+			    if( document.frm.remember.checked)
+			    { 
+			    	setCookie("password",password,24,"/");
+			    }  
+			    else{
+			    	deleteCookie("password","/");
+			    }
+			    
+			   if(!cbi_validate_form(document.frm, null,showerror))
+				{
+				    return false;
+				}
+				$("#admin_pwd").val(base64encode(utf16to8($("#admin_pwd").val())));
+			    document.frm.submit();
+			    
+			}
+			function showerror(errmsg)
+    		{	
+       			 Alert("管理员密码错误，请重新输入");
+    		}
+			function initValue()
+			{ 
+				var passwordValue = getCookieValue("password");
+				if(passwordValue != '')
+				{
+					document.frm.remember.checked = true;
+				document.getElementById("image_check").src = "<%=media%>/images/icon_checkbox_on.png"; 
+				}
+				else
+				{
+					document.frm.remember.checked = false;
+				document.getElementById("image_check").src = "<%=media%>/images/icon_checkbox_off.png";
+				}
+				document.frm.password.value = passwordValue;   
+				document.frm.password.focus();
+			}
+			$(function(){
+				$("body").keypress(function(e){
+					if (e.keyCode == 13) {
+						if($("#myAlert").css("display")=="block"){
+							$("#myAlert").modal("hide");
+							$("#admin_pwd").focus();
+						}else{
+							check();
+						}
+					}
+				});
+				$("#confirm_bt").click(function(){
+					$("#myAlert").modal("hide");
+					$("#admin_pwd").focus();
+				})
+			});
+	</script>
+</head>
+<div class="modal fade" id="myAlert" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="alert_dialog" role="document">
+            <div class="modal-content alert_content">
+                <span id="alert_msg"></span>
+                <button id="confirm_bt" type="button" >确定</button>
+            </div>
+        </div>
+</div>
+	<% if fuser then %>
+	<script language="JavaScript" type="text/javascript">
+		Alert("管理员密码错误，请重新输入");
+	</script>
+	<% end %>
+	<body class="content_body" onLoad="initValue()" oncontextmenu=self.event.returnValue=false>
+<div class="modal fade" id="browserModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="browser_dialog" role="document">
+    <div class="modal-content browser_content">
+      <div class="browser_warning_div">
+      	<div style="float:left;">
+      		<img src="<%=media%>/images/warning.png" />
+      	</div>
+      	<div class="browser_warning_text">
+      		<span class="browser_warning_msg">您的浏览器版本过低！</span>
+      		<span class="browser_warning_msg" style="display:block;margin-top:5px;">为了得到最好的体验效果，我们建议您对浏览器进行升级</span>
+      		<div class="browser_continue_access_bt" data-dismiss="modal">
+      		继续访问
+      		</div>
+      	</div>
+      </div>
+      <div class="browser_center_div">
+      	<div class="browser_line" style="float:left;"></div>
+      	<div class="browser_recommend_msg">
+      	<span>推荐以下浏览器或浏览器版本</span>
+      	</div>
+      	<div class="browser_line" style="float:right;"></div>
+      </div>
+      <div class="browser_recommend_img_center">
+      	 <div class="browser_recommend_img"><a href="http://www.google.cn/chrome/browser/desktop/index.html" target="_blank">
+      	 	<img src="<%=media%>/images/chrome.png">
+      	 	<span>Chrome</span>
+      	 	</a>
+      	 </div>
+      	  <div class="browser_recommend_img"><a href="http://www.firefox.com.cn/download/" target="_blank">
+      	 	<img src="<%=media%>/images/firefox.png">
+      	 	<span>Firefox</span>
+      	 	</a>
+      	 </div>
+      	  <div class="browser_recommend_img">
+      	  <a href="https://support.microsoft.com/zh-cn/help/17621/internet-explorer-downloads" target="_blank">
+      	 	<img src="<%=media%>/images/ie9.png">
+      	 	<span>Internet Explorer 9</span>
+      	 	</a>
+      	 </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+	<div class="login_logo">
+			<img src="<%=media%>/images/logo_guide.png"/>
+			<span>登录</span>
+	</div>
+	<div class="login_top_right"></div>
+		<form  method="post" name="frm" action="/cgi-bin/luci/admin/login"  autocomplete="off" >
+			<input type="hidden" name="action_mode" value="" />
+			<input type="hidden" name="action_url" value="" />
+			<input type="checkbox" name="remember" style="display:none;"/>
+			<input type="text" name="username" value="admin" style="display:none;"/>
+            <div class="login_center_div">
+                
+				<input type="password" class="pwd_input" name="password" id="admin_pwd" placeholder="请输入管理员密码" tabindex="1"/>
+              
+                <div class="remember_pwd_div">
+					<span id="pwd_error_msg" class="pwd_error_msg_span"></span>
+					<img src="<%=media%>/images/icon_checkbox_off.png" id = "image_check" class="img_change" tabindex="2">
+                            <span class="remember_pwd_span"><%:sysauth remember key%></span>
+                </div>
+                <div class="login_button_div">
+                    <button type="button"  onclick="return check();" tabindex="3"><%:sysatuh login%></button>
+                </div>
+            </div>
+		</form>
+	<div class="login_bottom_left"></div>
+		<div class="login_fotter">
+		<span class="hotline_span"><%:phicomm license%></span>
+          		<span class="mac_span"><%:MAC Address%>：<%=get_wan_mac()%></span>
+		<span class="software_version_span"><%:software version%>：<%=pcdata(luci.phicommproduct.softversion)%></span>
+			</div>
+	</body>
+	</html>

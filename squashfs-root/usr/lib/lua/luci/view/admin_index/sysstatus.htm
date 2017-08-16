@@ -1,0 +1,609 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+-%>
+
+<%
+
+    require "luci.fs"
+    require "luci.tools.status"
+    require "luci.phicommproduct"
+    data ={                           
+            lan_ipaddrs = {},
+            wan         = {}, 
+            lan         = {},
+            wlan2G      = {},
+            wlan5G      = {}                            
+            } 
+
+    local has_network = luci.fs.stat("/etc/config/network")
+    local has_wifi = luci.fs.stat("/etc/config/wireless")
+              has_wifi = has_wifi and has_wifi.size > 0
+    local phicomm_lua = require "phic"
+    local uci_t = require "luci.model.uci".cursor()
+    local netm = require "luci.model.network".init()
+
+--[[获取lan port 数据 start 1]]--        
+    local lan = netm:get_network("lan")
+    data.lan.ipaddr = uci_t:get("network","lan","ipaddr")
+    data.lan.netmask = uci_t:get("network","lan","netmask")
+    data.lan.lan_macaddr = uci_t:get("network","lan","macaddr")
+--[[end 1]]--
+
+--[[获取wan port 数据 start 2]]--    
+    local cur = luci.model.uci.cursor()
+    local wan_section = cur:get_all("network","wan")
+    local opt_value = wan_section.peerdns
+
+    local hw_ver
+--[[获取硬件版本号]]--
+    uci_t:foreach("system", "system",
+        function(s)
+            hw_ver = s.hw_ver or ""
+        end
+    )
+
+    wan2 = netm:get_wannet()
+    if wan2 then  
+        data.wan.ipaddr  = wan2:ipaddr()                              
+        data.wan.gwaddr  = wan2:gwaddr()                
+        data.wan.netmask = wan2:netmask()              
+        if opt_value == nil or opt_value == "1" then
+            data.wan.dns     = wan2:dnsaddrs()   
+        else
+            data.wan.dns     = {wan_section.dns1,wan_section.dns2}
+            if not data.wan.dns[1] then
+                data.wan.dns    = {wan_section.static_dns1, wan_section.static_dns2}
+            end
+        end                             
+    end
+    if has_network then
+        data.wan.ifname        = uci_t:get("network","wan","ifname")    
+        if data.wan.ifname == "apcli0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apcli0 | grep HWaddr | cut -c 39-55") 
+        elseif data.wan.ifname == "apclii0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apclii0 | grep HWaddr | cut -c 39-55") 
+        else   
+            if uci_t:get("network","wan", "ignore") == "1" then
+                data.wan.macaddr    = uci_t:get("network","wan","macaddr")
+            else
+                data.wan.macaddr    = uci_t:get("network","wan","mac_addr")
+            end
+        end
+
+        data.wan.proto        = uci_t:get("network","wan","proto")
+    else
+        data.wan.ifname    = "eth0.2" 
+        data.wan.macaddr    = "00:00:00:00:00:00" 
+        data.wan.proto        = "dhcp"
+    end
+
+    local phicomm_lua = require "phic"
+--[[获取2.4G wireless 数据 start 3]]--
+    dev1 = netm:get_wifidev("mt7620")
+    net1 = dev1:get_wifinets()
+    local disable_2g=phicomm_lua.get_wifi_iface_config("ra0", "disabled") or {"0"}
+    local radio_2g = disable_2g[1] == "1" and "0" or "1"
+
+    data.wlan2G.status = radio_2g
+    data.wlan2G.ssid    =    net1[1]:active_ssid() or "-"
+    bssid_table = phicomm_lua.get_mac_addr("wlan_2") or {"unkown"}
+    data.wlan2G.bssid    =    bssid_table[1]
+    data.wlan2G.channel    =    net1[1]:channel() or "-"
+    if has_wifi then
+        data.wlan2G.mode    =    uci_t:get("wireless","mt7620", "wifimode") or "9"
+        uci_t:foreach("wireless", "wifi-iface",
+            function(s)
+                if s.device == "mt7620" and s.ifname == "ra0" then
+                    data.wlan2G.enc        =    s.encryption or "psk2"
+                end
+            end
+        )
+    else
+        data.wlan2G.status    =    "0"
+        data.wlan2G.mode    =    "-"
+        data.wlan2G.enc        =    "-"
+    end
+
+--[[end 3]]
+
+--[[获取5G wireless 数据 start 4]]--
+    dev2 = netm:get_wifidev("mt7612e")
+    net2 = dev2:get_wifinets()
+    --local iw_5g = luci.sys.wifi.getiwinfo("rai0")
+    local disable_5g=phicomm_lua.get_wifi_iface_config("rai0", "disabled") or {"0"}
+    local radio_5g = disable_5g[1] == "1" and "0" or "1"
+
+    data.wlan5G.status = radio_5g
+	
+    data.wlan5G.ssid    =    net2[1]:active_ssid() or "-"
+    bssid_table = phicomm_lua.get_mac_addr("wlan_5") or {"unkown"}
+    data.wlan5G.bssid    =    bssid_table[1]
+    data.wlan5G.channel    =    net2[1]:channel() or "-"
+    if has_wifi then
+        data.wlan5G.mode    =    uci_t:get("wireless","mt7612e", "wifimode") or "14"
+        uci_t:foreach("wireless", "wifi-iface",
+            function(s)
+                if s.device == "mt7612e" and s.ifname == "rai0" then
+                    data.wlan5G.enc        =    s.encryption or "psk2"
+                end
+            end
+        )
+    else
+        data.wlan5G.status    =    "0"
+        data.wlan5G.mode    =    "-"
+        data.wlan5G.enc        =    "-"
+    end
+--[[end 4]]
+    require "luci.util"
+    date = luci.util.exec("date +'%Y/%m/%d %H:%M'")
+    time = luci.sys.uptime()
+    updays = math.modf(time/(60*60*24))
+    upminutes = math.modf(time/60)
+    uphours = math.modf(upminutes/60)%24
+    upminutes = upminutes%60
+    upsecs = time%60
+
+function get_phy_connect()                                                                        
+        local stat, iwinfo = pcall(require, "iwinfo")                                         
+                                                                                    
+        local phy_status = 1                                                      
+        levle = iwinfo.get_phy_connect("wan")               
+        for k, v in ipairs(levle or { }) do                  
+                        if k or v then                                                     
+                            phy_status = v                       
+                        end                                                              
+        end
+    return phy_status
+end
+
+function get_wisp_connect(ifname)                                                                        
+        local stat, iwinfo = pcall(require, "iwinfo")                                       
+                                                                                    
+        local wisp_status = 0                   
+        levle = iwinfo.get_wisp_connect(ifname)
+        for k, v in ipairs(levle or { }) do                  
+                        if k or v then                                                     
+                            wisp_status = v                       
+                        end                                                              
+        end
+    return wisp_status
+end
+
+local phy_status = get_phy_connect()
+local wisp_2g_status = get_wisp_connect("apcli0")
+local wisp_5g_status = get_wisp_connect("apclii0")
+
+function get_wan_ipaddr()                        
+    local ipaddr = "0.0.0.0"                              
+    
+    if  wan2 and data.wan.ipaddr and ((data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0") or phy_status == 1) then
+        if data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0" then
+            if data.wan.ifname == "apcli0" and wisp_2g_status == 0 then
+                return ipaddr
+            end
+            if data.wan.ifname == "apclii0" and wisp_5g_status == 0 then
+                return ipaddr
+            end
+        end
+        ipaddr = data.wan.ipaddr
+    end                                                   
+    
+    return ipaddr                                                 
+end 
+
+function get_wan_netmask()                                      
+    local netmask = "0.0.0.0"                      
+
+    if  wan2 and data.wan.netmask and ((data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0") or phy_status == 1) then
+        if data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0" then
+            if data.wan.ifname == "apcli0" and wisp_2g_status == 0 then
+                return netmask
+            end
+            if data.wan.ifname == "apclii0" and wisp_5g_status == 0 then
+                return netmask
+            end
+        end
+        netmask = data.wan.netmask
+    end                                         
+                                 
+    return netmask
+end
+
+function get_wan_gw()                                                                                                          
+    local gw = "0.0.0.0"                                                                     
+    
+    if  wan2 and data.wan.gwaddr and ((data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0") or phy_status == 1) then
+        if data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0" then
+            if data.wan.ifname == "apcli0" and wisp_2g_status == 0 then
+                return gw
+            end
+            if data.wan.ifname == "apclii0" and wisp_5g_status == 0 then
+                return gw
+            end
+        end
+        gw = data.wan.gwaddr
+    end                                                                            
+                                                                                   
+    return gw                                                                     
+end       
+
+function get_wan_mac()                                                                  
+    local mac = "00:00:00:00:00:00"   
+
+    if data.wan.macaddr then
+        mac = data.wan.macaddr          
+    end                                                
+    return mac    
+end       
+
+function get_wan_dns()           
+    local dns = "0.0.0.0;0.0.0.0"                   
+
+    if wan2 and data.wan.dns[1] and ((data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0") or phy_status == 1) then
+        if data.wan.ifname == "apcli0" or data.wan.ifname == "apclii0" then
+            if data.wan.ifname == "apcli0" and wisp_2g_status == 0 then
+                return dns
+            end
+            if data.wan.ifname == "apclii0" and wisp_5g_status == 0 then
+                return dns
+            end
+        end
+        dns = data.wan.dns[1]
+        if data.wan.dns[2] then
+            dns = dns..";"..data.wan.dns[2]
+        else
+            dns = dns..";".."0.0.0.0"
+        end
+    end
+    return dns
+end         
+
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">
+    $(function(){
+        function parsemode(mode)
+        {
+            var string_mode;
+            if (mode == "0")
+            {
+                string_mode = "802.11b/g"
+            }
+            else if (mode == "1")
+            {
+                string_mode = "802.11b"
+            }
+            else if (mode == "2")
+            {
+                string_mode = "802.11a"
+            }
+            else if (mode == "4")
+            {
+                string_mode = "802.11g"
+            }
+            else if (mode == "6")
+            {
+                string_mode = "802.11n"
+            }
+            else if (mode == "7")
+            {
+                string_mode = "802.11g/n"
+            }
+            else if (mode == "8")
+            {
+                string_mode = "802.11a/n"
+            }
+            else if (mode == "9")
+            {
+                string_mode = "802.11b/g/n"
+            }
+            else if (mode == "14")
+            {
+                string_mode = "802.11a/n/ac"
+            }
+            else if (mode == "15")
+            {
+                string_mode = "802.11n/ac"
+            }
+            else
+                string_mode = "-"
+            return string_mode;
+        }
+
+        function parse_wan_proto(ifname,proto)                      
+        {           
+            if(ifname == "apcli0" || ifname == "apclii0"){
+                if(proto == "dhcp")
+                    return String.format("%s","<%:sysstatus wireless extend%>-DHCP");
+                else if(proto == "pppoe")
+                    return String.format("%s","<%:sysstatus wireless extend%>-PPPoE");
+                else if(proto == "static")
+                    return String.format("%s","<%:sysstatus wireless extend%>-<%:sysstatus_static%>");
+                else
+                    return String.format("%s","-");
+            }
+            else{
+                if(proto == "dhcp")
+                    return String.format("%s","DHCP");
+                else if(proto == "pppoe")
+                    return String.format("%s","PPPoE");
+                else if(proto == "static")
+                    return String.format("%s","<%:sysstatus_static%>");
+                else
+                    return String.format("%s","-");
+            }
+        }    
+        
+        function parse_wlan_enc(enc)                      
+        {           
+            var enc_mode;
+            if(enc.length < 4)
+                enc_mode = "<%:sysstatus null%>";
+            else if(enc[0] == 'n')//none
+                enc_mode = "<%:sysstatus null%>";
+            else if(enc[0] == 'p' && enc[1] == 's' && enc[2]=='k' && enc[3] == '+')//psk+xx
+                enc_mode = "WPA-PSK";
+            else if(enc[0] == 'p' && enc[1] == 's' && enc[2]=='k' && enc[3] == '2' && enc[4] == '+')//psk2+xx
+                enc_mode = "WPA2-PSK";
+            else if(enc[0] == 'p' && enc[1] == 's' && enc[2]=='k' && enc[3] == '-' && enc[4] == 'm'
+                && enc[5] == 'i' && enc[6] == 'x' && enc[7] == 'e' && enc[8] == 'd' && enc[9] == '+')//psk-mixed+xx
+                enc_mode = "WPA-PSK/WPA2-PSK";
+            else
+                enc_mode = "WPA2-PSK";
+            return enc_mode;
+        }
+        
+        var e;
+
+        if (e = document.getElementById('wan_proto'))
+            e.innerHTML = parse_wan_proto("<%=data.wan.ifname%>","<%=data.wan.proto%>");
+        if (e = document.getElementById('lan_ip'))                                      
+                        e.innerHTML = "<%=data.lan.ipaddr%>" || "0.0.0.0";
+        if (e = document.getElementById('lan_netmask'))                                      
+                        e.innerHTML = "<%=data.lan.netmask%>" || "0.0.0.0";
+        if (e = document.getElementById('lan_mac'))
+            e.innerHTML = "<%=data.lan.lan_macaddr%>" || "00:00:00:00:00:00";
+        if (e = document.getElementById('wlan1_status'))
+            e.innerHTML = "<%=data.wlan2G.status%>"=="0"?"<%:sysstatus disable%>":"<%:sysstatus enable%>";
+        if (e = document.getElementById('wlan1_ssid'))
+            e.innerHTML = changestr("<%=data.wlan2G.ssid%>") || "-";
+        if (e = document.getElementById('wlan1_mac'))
+            e.innerHTML = "<%=data.wlan2G.bssid%>" || "-";
+        if (e = document.getElementById('wlan1_mode'))
+            e.innerHTML = parsemode("<%=data.wlan2G.mode%>");
+        if (e = document.getElementById('wlan1_channel'))
+            e.innerHTML = "<%=data.wlan2G.channel%>" || "-";
+        if (e = document.getElementById('wlan2_status'))
+            e.innerHTML = "<%=data.wlan5G.status%>"=="0"?"<%:sysstatus disable%>":"<%:sysstatus enable%>";
+        if (e = document.getElementById('wlan2_ssid'))
+            e.innerHTML = changestr("<%=data.wlan5G.ssid%>") || "-";
+        if (e = document.getElementById('wlan2_mac'))
+            e.innerHTML = "<%=data.wlan5G.bssid%>" || "-";
+        if (e = document.getElementById('wlan2_mode'))
+            e.innerHTML = parsemode("<%=data.wlan5G.mode%>");
+        if (e = document.getElementById('wlan2_channel'))
+            e.innerHTML = "<%=data.wlan5G.channel%>" || "-";
+            
+        var proto = "<%=data.wan.proto%>";
+        var ipaddr = "<%=get_wan_ipaddr()%>";
+        if(proto == "dhcp"){
+            if(ipaddr != "" && ipaddr != "0.0.0.0" ){
+                $("#release").show();
+                $("#update").hide();
+            }else{
+                $("#release").hide();
+                $("#update").show();
+            }
+        }
+        if(proto == "static"){
+            $("#release").hide();
+            $("#update").hide();
+        }
+
+        $("#release").click(function(){
+            $("#action_mode").val("release");
+            $("#bgdiv").show();
+            $("#load_div").show();
+            document.mode.submit();
+        });
+        $("#update").click(function(){
+            $("#action_mode").val("update");
+            $("#bgdiv").show();
+            $("#load_div").show();
+             document.mode.submit();
+        });
+    })
+
+	function changestr(e)
+	{
+		var str = e;
+		if(str.length > 12)
+			return str.substring(0,11)+"...";
+		else
+			return str;
+	}
+</script>
+<!-- sys status -->
+<div class="setcontent advanced" id="sysStatusDiv">
+	<div class="title-span"><span ><%:system status%></span></div>
+	<div class="title-underline"></div>
+	<div class="margin-left-right10 table-border-hide">
+		<table>
+			<tr>
+				<th class="tab-l-w"><%:system info%>：</th>
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span style="float:left"><%:now time%>：</span>
+					<span style="float:left"><%=date%></span>
+					<span>
+						<a href="#" title="<%=translate('nowtime help')%>">
+							<div class="iconhelpdiv">
+								<span class="icon-help color-orange"></span>
+							</div>
+						</a>
+					</span>
+				</td>
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:running time%>：</span>
+					<span>
+                    <% if updays > 0 then %>
+                        <%=updays%><%:sysstatus day%>， <%=uphours%><%:sysstatus hour%>， <%=upminutes%><%:sysstatus min%>， <%=upsecs%><%:sysstatus sec%>
+                    <% elseif uphours > 0 then %>
+                        <%=uphours%><%:sysstatus hour%>，<%=upminutes%><%:sysstatus min%>，<%=upsecs%><%:sysstatus sec%>
+                    <% elseif upminutes > 0 then %>
+                        <%=upminutes%><%:sysstatus min%>，<%=upsecs%><%:sysstatus sec%>
+                    <% elseif upsecs > 0 then %>
+                        <%=upsecs%><%:sysstatus sec%>
+                    <% end %>
+					</span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:sysstatus software version%>：</span>
+					<span><%=pcdata(luci.phicommproduct.softversion)%></span>
+				</td>										
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:equipment model%>：</span>
+					<span><%=luci.sys.hostname() or "?"%></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:hardware version%>：</span>
+					<span><%=hw_ver%></span>
+				</td>										
+			</tr>									
+		</table>
+	</div>
+	<div class="title-underline opacity-underline"></div>
+	<div class="margin-left-right10 table-border-hide">
+		<table>
+			<tr>
+				<th class="tab-l-w"><span><%:wan status%>：</span></th>
+				<th class="tab-r-w"><span><%:lan status%>：</span></th>
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:internet method%>：</span>
+					<span id="wan_proto"></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:IP address%>：</span>
+					<span  id="lan_ip"></span>
+				</td>										
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+						<span><%:IP address%>：</span>
+						<span id="wan_ip"><%=get_wan_ipaddr()%></span>
+				</td>
+				<td class="tab-r-w"> 
+					<span><%:sub network mask%>：</span>
+					<span id="lan_netmask"></span>
+				</td>										
+			</tr>	
+			<tr>
+				<td class="tab-l-w">
+					<span><%:sub network mask%>：</span>
+					<span id="wan_netmask"><%=get_wan_netmask()%></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:mac address%>：</span>
+					<span  id="lan_mac"></span>
+				</td>										
+			</tr>	
+			<tr>
+				<td class="tab-l-w">
+					<span><%:default gateway%>：</span>
+					<span id="wan_gw"><%=get_wan_gw()%></span>
+				</td>										
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:dns server%>：</span>
+					<span id="wan_dns"><%=get_wan_dns()%></span>
+				</td>									
+			</tr>	
+			<tr>
+				<td class="tab-l-w">
+					<span><%:mac address%>：</span>
+					<span id="wan_mac"><%=get_wan_mac()%></span>
+				</td>										
+			</tr>
+		</table>
+	</div>	
+	<div class="title-underline opacity-underline"></div>
+	<div class="margin-left-right10 table-border-hide">
+		<table>
+			<tr>
+				<th class="tab-l-w"><span><%:2.4Gwireless status%>：</span></th>
+				<th class="tab-r-w"><span><%:5Gwireless status%>：</span></th>
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:wireless status%>：</span>
+					<span id="wlan1_status"></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:wireless status%>：</span>
+					<span id="wlan2_status"></span>
+				</td>										
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:network name%>：</span>
+					<span title="<%=data.wlan2G.ssid%>" id="wlan1_ssid"></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:network name%>：</span>
+					<span title="<%=data.wlan5G.ssid%>" id="wlan2_ssid"></span>
+				</td>										
+			</tr>	
+			<tr>
+				<td class="tab-l-w">
+					<span><%:wireless mode%>：</span>
+					<span id="wlan1_mode"></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:wireless mode%>：</span>
+					<span id="wlan2_mode"></span>
+				</td>										
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:wireless channel%>：</span>
+					<span id="wlan1_channel"></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:wireless channel%>：</span>
+					<span id="wlan2_channel"></span>
+				</td>										
+			</tr>
+			<tr>
+				<td class="tab-l-w">
+					<span><%:mac address%>：</span>
+					<span id="wlan1_mac"></span>
+				</td>
+				<td class="tab-r-w">
+					<span><%:mac address%>：</span>
+					<span id="wlan2_mac"></span>
+				</td>										
+			</tr>									
+		</table>
+	</div>							
+</div><!-- end sys status -->
+<%+footer%>

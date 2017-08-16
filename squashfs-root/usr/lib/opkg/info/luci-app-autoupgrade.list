@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/controller/admin/autoupgrade.lua
+/usr/lib/lua/luci/view/autoupgrade.htm
+/etc/nvram2uci/autoupgrade

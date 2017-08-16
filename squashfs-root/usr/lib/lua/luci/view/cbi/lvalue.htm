@@ -1,0 +1,272 @@
+<%+cbi/valueheader%>
+<% local uci_t = require "luci.model.uci".cursor() %>
+<% 
+	local phicomm_lua = require "phic" 
+	local wisp2_status = phicomm_lua.get_wifi_iface_config("ra0", "ApCliEnable") or {"0"}
+	local wisp5_status = phicomm_lua.get_wifi_iface_config("rai0", "ApCliEnable") or {"0"}
+	local wisp_status = wisp2_status[1] == "1" and "1" or wisp5_status[1] == "1" and "1" or "0"
+%>
+<% if self.widget == "select" then %>
+    <div>
+        <div class="dropdown dropdown_div" style="float:left;">
+            <div class="dropdown_button" onclick='dropdown_click(this)'
+            <% if self.idname then %>
+                    id="<%=self.idname%>"
+                <%else%>
+                    <%=attr("id", cbid)%>
+                <%end%>
+            type="button" <% if not ( self.conflict_wisp and wisp_status == "1" ) then%> data-toggle="dropdown"  <% end %> aria-haspopup="true" aria-expanded="false" <% if self.conflict_wisp and wisp_status == "1" then%> disabled="disabled" <% end %>>                                
+                <input type="text" class="drop_input" readonly="readonly" onfocus="this.blur();"  UNSELECTABLE="on"  value="<% for i, k in ipairs(self.keylist) do %><%local li_i = tostring(self:cfgvalue(section) or self.default or 1) if k == li_i then %><%=self.vallist[i]%><% end %><% end %>" <% if self.conflict_wisp and wisp_status == "1" then%> style="border: 1px solid #DDD;    background-color: #F5F5F5;    color:#ACA899; cursor: default;"<% end %>/>
+                <span class="icon-downarrow"></span>
+            </div>
+            <ul class="dropdown-menu" 
+                <%if self.idname then %>
+                    id="<%=self.idname%>_ul"
+                <%else%>
+                    id="<%=cbid%>_ul"
+                <%end%> aria-labelledby="dLabel" style="width:170px;">
+                    <% for i, k in ipairs(self.keylist) do %>
+            <li id="<%=k%>" onclick="
+            var str = $(this).children('a').html();
+            $(this).parents('.dropdown_div').find('.drop_input').val(str); 
+            $(this).parent('ul').prev('div').find('span').removeClass('icon-uparrow'); 
+            $(this).parent('ul').prev('div').find('span').addClass('icon-downarrow');
+            $(this).parent('ul').next('input').val(this.id);
+            <% if self.bandsel_bg then%>sel_band_bg_<%=self.idname%>();<% end%>
+  <% if self.macclone then %>                           
+ <% if i == 1 then %>
+   var macvalue='<%=uci_t:get('network','wan','macaddr')%>';
+     document.getElementById('cbid.network.wan.mac_addr').value=macvalue;
+    <% elseif i == 2 then %>
+		<% macremote = luci.sys.net.ip4mac(nixio.getenv('REMOTE_ADDR')) %>
+		<% if macremote then %>
+     		document.getElementById('cbid.network.wan.mac_addr').value='<%= macremote:upper() %>';
+		<% else %>
+			document.getElementById('cbid.network.wan.mac_addr').value='';
+		<% end %>
+    <% elseif i == 3 then %>
+    document.getElementById('cbid.network.wan.mac_addr').value='';
+<% end %>
+	mac_clone(str);
+ <%- end -%>">
+ <% if self.bandsel_bg then%>
+    <script type="text/javascript">
+        function sel_band_bg_<%=self.idname%>()
+            {
+                var str_name="";
+                str_name="cbid.wireless.mt7620.bw";
+                var temp_input = $("input[name='"+str_name+"']");
+
+                var inputname = $("#<%=self.idname%>").next('ul').next('input');
+                if(inputname.attr("value") == "0"){
+                    if(temp_input.length>0){
+                        for(i=0;i<temp_input.length;i++)
+                        {
+                            if( $(temp_input[i]).attr("value") == 0 && document.getElementById("2g_bandwidth").checked == false){
+                                Alert("<%:multlangjs_bgmode_band%>");
+                            }
+                        }
+                        for(i=0;i<temp_input.length;i++)
+                        {
+                            if( $(temp_input[i]).attr("value") != 0){
+                                $(temp_input[i]).removeAttr("checked");
+                                $(temp_input[i]).attr("disabled","disabled"); 
+                                $(temp_input[i]).next("span").attr("style",'background:url("/luci-static/bootstrap/images/icon_radio_off.png") no-repeat;margin-top: 9px;');
+                            } else {
+                                document.getElementById("2g_bandwidth").checked = true;
+                                $(temp_input[i]).next("span").attr("style",'background:url("/luci-static/bootstrap/images/icon_radio_on.png") no-repeat;margin-top: 9px;');
+                            }
+                        }
+                    }
+                }else {
+                    if(temp_input.length>0){
+                        for(i=0;i<temp_input.length;i++)
+                        {
+                            $(temp_input[i]).removeAttr("disabled");
+                        }
+                    }
+                }
+            }
+            $(function(){
+                    sel_band_bg_<%=self.idname%>();
+            })
+    </script>
+ <% end%>
+ 
+ <a value="<%=self.vallist[i]%>"><%=self.vallist[i]%></a>
+      </li>
+                    <% end %>
+            </ul> 
+            <input type="hidden"<%= attr("name", cbid) %> value="<%= tostring(self:cfgvalue(section) or self.default or 1 ) %>" />
+        </div>
+        <% if self.macclone_help then%>
+        <a title="<%=self.help_desc%>">
+        <span class="icon-help cbi_icon_help"></span>
+        </a>
+        <% end %>
+        <div style="clear:both;"></div>
+    </div>
+<% elseif self.widget == "radio" then
+    local c = 0
+    for i, key in pairs(self.keylist) do
+    c = c + 1
+%>
+    <span>
+        <input class="hidden-input hidden_radio" style="<%if self.secondtitle then%>margin-top:15px;<%else%>margin-top:9px;<%end%> margin-left: 15px;" onclick="cbi_d_update(this); <% if self.dimmed_sync then %>sync_dimmed_<%=self.idname%>();<%end%> <%if self.bandsel_bg then %>bandsel_bg_<%=self.idname%>(); <%end%> " onchange="cbi_d_update(this.id)" type="radio"
+        <% if self.idname then %>
+                id="<%=self.idname%>"
+        <%else%>
+                <%=attr("id", cbid..c)%>
+        <%end%>
+        <%= attr("name", cbid) .. attr("value", key) .. ifattr((self:cfgvalue(section) or self.default) == key, "checked", "checked") %> />
+        <span class="hidden_radio_icon" style="<%if self.secondtitle then%>margin-top:15px;<%else%>margin-top:9px;<%end%> margin-left: -14px;"></span>
+        <span class="hidden_radio_text" style="<%if self.min_size then%>width: 66px;text-align: left;<%end%><%if self.secondtitle then%>line-height:43px;<%else %>line-height:31px;<%end%> padding-left:10px; "<%= attr("for", cbid..c) %>><%=self.vallist[i]%></span>
+    </span>
+<% if c == self.size then c = 0 %><% if self.orientation == "horizontal" then %>&#160;<% else %><br /><% end %>
+<% end end %>
+<% end %>
+ <% if self.radio_help then%>
+ <a title="<%=self.help_desc%>">
+<span class="icon-help cbi_icon_help" style="<%if self.left then%>left:76px;<%else%>margin-left: 3px;<%end%>"></span>
+</a>
+<% end %>
+<%- if self.dimmed_sync then -%>
+         <script type="text/javascript">
+                function sync_dimmed_<%=self.idname%>()
+                {
+                    <%
+                        local none_display = false
+                        local apcli_enable = "0"
+                        local apcli_str_idname = self.idname
+                        apcli_str_idname = string.sub(apcli_str_idname,1,2);
+                        if apcli_str_idname == "2g" then
+                            apcli_enable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliEnable") or {"0"}
+                        elseif apcli_str_idname == "5g" then
+                            apcli_enable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliEnable") or {"0"}
+                        end
+                        if apcli_enable[1] == "1" then
+                            none_display = true
+                        end
+                    %>
+
+                    var str_idname = "<%=self.idname%>";
+                    str_idname = str_idname.substring(0,2);
+                    <% if none_display then %>
+                            document.getElementById(str_idname+"_mode").disabled = true;
+                            document.getElementById(str_idname+"_bandwidth").disabled = true;
+                            document.getElementById(str_idname+"_channel").disabled = true;
+                            var str_name="";
+                            if(str_idname=="2g"){
+                                str_name=document.getElementsByName("cbid.wireless.mt7620.bw");
+                            }else if(str_idname=="5g"){
+                                str_name=document.getElementsByName("cbid.wireless.mt7612e.bw");
+                            }
+                            if(str_name.length>0){
+                                for(i=0;i<str_name.length;i++)
+                                   str_name[i].disabled = true;
+                            }
+                            $("#"+str_idname+"_mode").attr("disabled","true");
+                            $("#"+str_idname+"_mode").find("input").attr("style","border: 1px solid #DDD;    background-color: #F5F5F5;    color:#ACA899; cursor: default;");
+                            $("#"+str_idname+"_channel").attr("disabled","true");
+                            $("#"+str_idname+"_channel").find("input").attr("style","border: 1px solid #DDD;    background-color: #F5F5F5;    color:#ACA899; cursor: default;");
+
+                    <% end %>
+                        if(document.getElementById("<%=self.idname%>").checked == false)
+                        {
+                        <%for i, v in ipairs(self.dimmed_id) do %>
+                                document.getElementById("<%=v%>").disabled = true;
+                        <%end%>
+                            var str_name="";
+                            if(str_idname=="2g"){
+                             str_name=document.getElementsByName("cbid.wireless.mt7620.bw");
+                                
+                            }else if(str_idname=="5g"){
+                                str_name=document.getElementsByName("cbid.wireless.mt7612e.bw");
+                            }else if(str_idname =="gu"){
+                                str_idname = "guest";
+                            }
+                            if(str_name.length>0){
+                                for(i=0;i<str_name.length;i++)
+                                   str_name[i].disabled = true;
+                            }
+                            $("#"+str_idname+"_key").next("input").attr("disabled","true");
+                            $("#"+str_idname+"_mode").attr("disabled","true");
+                            $("#"+str_idname+"_channel").attr("disabled","true");
+                            $("#"+str_idname+"_key_img").attr("disabled","true");
+                            $("#"+str_idname+"_mode").find("input").attr("style","border: 1px solid #DDD;    background-color: #F5F5F5;    color:#ACA899; cursor: default;");
+                             $("#"+str_idname+"_channel").find("input").attr("style","border: 1px solid #DDD;    background-color: #F5F5F5;    color:#ACA899; cursor: default;");
+                        }else{
+                        <%for i, v in ipairs(self.dimmed_id) do %>
+                                var str_attr = "#"+"<%=v%>";
+                                var str_attr = $(str_attr).parent().parent().parent().parent().attr("style") ;
+                                if(str_attr == undefined || -1 == str_attr.indexOf('display:none'))
+                                        document.getElementById("<%=v%>").disabled = false;
+                        <%end%>
+                        var str_name="";
+                        <% if not none_display then %>
+                            if(str_idname=="2g"){
+                             str_name=document.getElementsByName("cbid.wireless.mt7620.bw");
+                                
+                            }else if(str_idname=="5g"){
+                                str_name=document.getElementsByName("cbid.wireless.mt7612e.bw");
+                            }else if(str_idname=="gu"){
+                                str_idname = "guest";
+                            }
+                            if(str_name.length>0){
+                                for(i=0;i<str_name.length;i++)
+                                   str_name[i].disabled = false;
+                            }
+                            $("#"+str_idname+"_mode").removeAttr("disabled");
+                            $("#"+str_idname+"_mode").find("input").removeAttr("style");
+                            $("#"+str_idname+"_channel").removeAttr("disabled");
+                            $("#"+str_idname+"_channel").find("input").removeAttr("style");
+                        <% else %>
+                            document.getElementById(str_idname+"_mode").disabled = true;
+                            document.getElementById(str_idname+"_bandwidth").disabled = true;
+                            document.getElementById(str_idname+"_channel").disabled = true;
+                        <% end %>
+                            $("#"+str_idname+"_key").next("input").removeAttr("disabled");
+                            $("#"+str_idname+"_key_img").removeAttr("disabled");
+                        }
+                }
+                $(function(){
+                    sync_dimmed_<%=self.idname%>();
+                })
+        </script>
+<%- end -%>
+
+<%- if self.bandsel_bg then -%>
+    <script type="text/javascript">
+        function bandsel_bg_<%=self.idname%>()
+        {
+            var str_id = "<%=self.idname%>";
+            var str_name=$("#"+str_id).attr("name");
+            var temp_input = $("input[name='"+str_name+"']");
+            var inputname = $("#2g_mode").next('ul').next('input');
+            if(temp_input.length>0 && inputname.attr("value") == "0"){
+                for(i=0;i<temp_input.length;i++)
+                {
+                    if( $(temp_input[i]).attr("value") == 0 && document.getElementById("<%=self.idname%>").checked == false){
+                        Alert("<%:multlangjs_bgmode_band%>");
+                    }
+                }
+                for(i=0;i<temp_input.length;i++)
+                {
+                    if( $(temp_input[i]).attr("value") != 0){
+                        $(temp_input[i]).removeAttr("checked");
+                        $(temp_input[i]).attr("disabled","disabled");
+                        $(temp_input[i]).next("span").attr("style",'background:url("/luci-static/bootstrap/images/icon_radio_off.png") no-repeat;margin-top: 9px;');
+                    } else {
+                        document.getElementById("2g_bandwidth").checked = true;
+                        $(temp_input[i]).next("span").attr("style",'background:url("/luci-static/bootstrap/images/icon_radio_on.png") no-repeat;margin-top: 9px;');
+                    }
+                        
+                }
+            }            
+        }
+        $(function(){
+            bandsel_bg_<%=self.idname%>();
+        })
+    </script>
+<%- end-%>
+<%+cbi/valuefooter%>

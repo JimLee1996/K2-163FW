@@ -1,0 +1,8 @@
+Package: update_usrproto
+Version: 1
+Depends: libc, libcurl
+Source: package/phicomm/update_usrproto
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 3180
+Description:  提供用户使用协议在线更新的命令，云端下发命令调用执行

@@ -1,0 +1,54 @@
+<% if self.map:get("config","enable") == "1" then%>
+<script type="text/javascript">
+	XHR.poll(5,'<%=luci.dispatcher.build_url("admin","more_forward","UPnPset", "status")%>', null,function(x, st){
+		var tb = document.getElementById('listtable');
+		if (st && tb){
+			$("#listtable").empty();
+			$("#listtable").append('<tr class="height-31"><th><%:order%></th><th><%:descp%></th><th><%:proto%></th><th><%:out port%></th><th><%:inner port%></th><th><%:IP addr%></th><th><%:status%></th></tr>');
+			for( var i = 0; i < st.length; i++ ){
+				var trHtml = '<tr>'+'<td>'+st[i].num+'</td>';
+				var str_desc =st[i].desc;
+				if(st[i].desc.length > 15){
+					str_desc = st[i].desc.slice(0,12)+"...";
+				}
+				trHtml +='<td style="width:126px;">'+
+				'<input readonly="readonly" type="text" style="border:none;margin:0 5px;width:116px;" title="'+st[i].desc+'" value="'+str_desc+'">'+
+				'</td>'+
+				'<td>'+st[i].proto+'</td>'+
+				'<td>'+st[i].extport+'</td>'+
+				'<td>'+st[i].intport+'</td>'+
+				'<td style="width:160px;">'+st[i].intaddr+'</td>';
+				if(st[i].status == "1"){
+					trHtml +='<td>开启</td>';
+				}else{
+					trHtml +='<td>关闭</td>';
+
+				}
+				trHtml +="</tr>";
+				$("#listtable").append(trHtml);
+			}
+		}
+	});
+</script>
+
+<fieldset class="upnp_list_div advanced">
+	<div class="margintop-15 margin-left-right5 height-31">
+		<span class="content-span width-350"><%:UPnP device list:%></span>
+	</div>
+	<div class="margin-left-right5">
+		<table style="width:100%;" frame="hsides" id="listtable">
+			<tr class="height-31">
+				<th><%:order%></th>
+				<th><%:descp%></th>
+				<th><%:proto%></th>
+				<th><%:out port%></th>
+				<th><%:inner port%></th>
+				<th><%:IP addr%></th>
+				<th><%:status%></th>
+			</tr>
+			<tr>
+			</tr>
+		</table>
+	</div>
+</fieldset>
+<% end %>

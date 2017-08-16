@@ -1,0 +1,11 @@
+#!/bin/sh 
+. /lib/functions/nvram2uci.sh
+
+lanip=`nvram get linux lan_ipaddr`
+
+if [ -n "$lanip" ]; then
+    nvram2uci lan_ipaddr network.lan.ipaddr
+    nvram2uci lan_netmask network.lan.netmask
+    sed -i -e "s/\\(.*\\) \\(phicomm.me\\)/$lanip \\2/" /etc/hosts
+    sed -i -e "s/\\(.*\\) \\(p.to\\)/$lanip \\2/" /etc/hosts
+fi

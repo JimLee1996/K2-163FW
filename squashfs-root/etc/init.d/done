@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=95
+boot() {
+	[ -d /tmp/root ] && mount_root done
+
+	#挂载持久化配置分区
+	local __mtd=$(find_mtd_part permanent_config)
+	local __flag=`dd if=$__mtd bs=1 count=2 2>/dev/null | hexdump -e '/2 "%02x"'`
+	if [[ "$__flag" = "ffff" ]]; then
+		echo -n -e $'\xde\xad\xc0\xde' | dd bs=1 seek=0 of=$__mtd count=4 conv=notrunc 2>/dev/null
+	fi
+
+	mkdir /permanent_config
+	mount -t jffs2 $__mtd /permanent_config >/dev/null 2>&1
+
+	block mount
+
+	#nvram to uci for upgrade
+	upgrade=`hexdump /dev/mtd2 -s 0x8014 -n 2 | grep "8014" | cut -d " " -f 2`
+	if [ "$upgrade"x != "ffff"x ]; then
+		dd if=/dev/mtd2 of=/tmp/mtd2-uboot bs=1 count=32788   #0x8014 = 32KB+20Byte 备份uboot分区
+
+		filelist=`ls /etc/nvram2uci`
+		for file in $filelist
+		do
+			sh /etc/nvram2uci/$file
+		done
+
+		mtd erase /dev/mtd2
+		dd if=/tmp/mtd2-uboot of=/dev/mtd2   #恢复uboot分区
+
+		reboot
+	fi
+
+	# process user commands
+	[ -f /etc/rc.local ] && {
+		sh /etc/rc.local
+	}
+
+	# set leds to normal state
+	. /etc/diag.sh
+	set_state done
+}

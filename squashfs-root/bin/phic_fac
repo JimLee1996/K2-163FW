@@ -1,0 +1,247 @@
+#!/bin/sh
+######################################################################
+# Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+#
+# DISCREPTION   : 产测相关命令
+# AUTHOR        : xiongyi.ouyang <xiongyi.ouyang@phicomm.com.cn>
+# CREATED DATE  : 2016-05-24
+# MODIFIED DATE :
+######################################################################
+
+. /lib/functions.sh
+
+#set -xv
+set -e
+
+trap abort EXIT INT TERM
+
+log()
+{
+    echo "[@] $@"
+}
+
+abort()
+{
+    echo "Test=NG"
+    log "Aborted!"
+    trap - EXIT
+    exit 1
+}
+
+usage(){
+    log "Usage:"
+    log "  $0 [OPERATION] <COMMAND...>"
+    log ""
+    log "  OPERATION"
+    log "     -g              get operation"
+    log "     -s              set operation"
+    log "     -h              display this help"
+    log "  COMMANDS, with supported operation in [ ]"
+    log "     mac             WAN mac.[gs]"
+    log "                     e.g. $0 -s mac 8c:ab:8e:98:40:a8"
+    log "     wan_mac         WAN mac.[g]"
+    log "     lan_mac         LAN mac.[g]"
+    log "     2.4g_mac        2G mac.[g]"
+    log "     5.8g_mac        5G mac.[g]"
+    log "     product         product name[g]"
+    log "     fw_ver          firmware version[g]"
+    log "     hw_ver          hardware version[g]"
+    log "     ip <wan>        IP address[g]"
+    log "     restore_reboot  restore to factory settings, then reboot[N/A]"
+    log "     restore         restore to factory[N/A]"
+    log "     2.4g-ch <1/6/11>          2.4GHz channel[gs]"
+    log "     2.4g-ssid <xxx>           2.4GHz ssid[g]"
+    log "     5.8g-ch <36/52/161>       5GHz channel[gs]"
+    log "     5.8g-ssid <xxx>           5GHz ssid[g]"
+    log "     fac_mode <Y/N>            factory mode flag[gs]"
+    log "     2.4g_insmod               insmod 2.4g lkm[N/A]"
+    log "     5.8g_insmod               insmod 5.8g lkm[N/A]"
+}
+
+OP=
+HELP=0
+
+while [[ -n "$1" ]]; do
+    case "$1" in
+        -g) OP="get";;
+        -s) OP="set";;
+        -h) HELP=1; break;;
+        -*)
+            log "Invalid option: $1"
+            exit 1;;
+        *) break;;
+    esac
+    shift;
+done
+
+if [[ -z "$*" -o "$HELP" -gt 0 ]]; then
+    usage
+    trap - EXIT
+    exit 1
+fi
+
+case "$1" in
+    mac)
+        if [[ "$OP" = "get" ]]; then
+            echo "MAC=`eth_mac r wan`"
+        fi
+        if [[ "$OP" = "set" ]]; then
+            if [[ -n "$2" ]]; then
+                eth_mac w mac `echo $2 | sed -e "s/:/ /g"`
+                echo "Test=OK"
+            else
+                echo "Test=NG"
+            fi
+        fi
+        break;;
+    wan_mac)
+        if [[ "$OP" = "get" ]]; then
+            echo "WAN_MAC=`eth_mac r wan`"
+        else
+            exit 1
+        fi
+        break;;
+    lan_mac)
+        if [[ "$OP" = "get" ]]; then
+            echo "LAN_MAC=`eth_mac r lan`"
+        else
+            exit 1
+        fi
+        break;;
+    2.4g_mac)
+        if [[ "$OP" = "get" ]]; then
+            echo "2G_MAC=`eth_mac r wlan_2`"
+        else
+            exit 1
+        fi
+        break;;
+    5.8g_mac)
+        if [[ "$OP" = "get" ]]; then
+            echo "5G_MAC=`eth_mac r wlan_5`"
+        else
+            exit 1
+        fi
+        break;;
+    2.4g-ch)
+        if [[ "$OP" = "get" ]]; then
+            echo "2.4g-ch=`uci get wireless.mt7620.channel`"
+        fi
+
+        if [[ "$OP" = "set" ]]; then
+            if [[ -n "$2" ]]; then
+                uci set wireless.mt7620.channel="$2"
+                uci commit wireless
+                iwpriv ra0 set Channel="$2"
+                echo "Test=OK"
+            else
+                echo "Test=NG"
+            fi
+        fi
+        break;;
+    2.4g-ssid)
+        if [[ "$OP" = "get" ]]; then
+            echo "2.4g-ssid=`uci get wireless.@wifi-iface[1].ssid`"
+        fi
+        break;;
+    5.8g-ch)
+        if [[ "$OP" = "get" ]]; then
+            echo "5.8g-ch=`uci get wireless.mt7612e.channel`"
+        fi
+
+        if [[ "$OP" = "set" ]]; then
+            if [[ -n "$2" ]]; then
+                uci set wireless.mt7612e.channel="$2"
+                uci commit wireless
+                iwpriv rai0 set Channel="$2"
+                echo "Test=OK"
+            else
+                echo "Test=NG"
+            fi
+        fi
+        break;;
+    5.8g-ssid)
+        if [[ "$OP" = "get" ]]; then
+            echo "5.8g-ssid=`uci get wireless.@wifi-iface[0].ssid`"
+        fi
+        break;;
+    product)
+        if [[ "$OP" = "get" ]]; then
+            echo "product=`uci get system.system.hostname`"
+        fi
+        break;;
+    fw_ver)
+        if [[ "$OP" = "get" ]]; then
+            echo "fw_ver=`uci get system.system.fw_ver`"
+        fi
+        break;;
+    hw_ver)
+        if [[ "$OP" = "get" ]]; then
+            echo "hw_ver=`uci get system.system.hw_ver`"
+        fi
+        break;;
+    ip)
+        if [[ "$OP" = "get" ]]; then
+            case "$2" in
+                wan)
+                    echo "ip.wan=`uci get network.wan.ipaddr`"
+                    break;;
+                *)
+                    exit 1
+            esac
+        fi
+        break;;
+    restore_reboot)
+        echo "Test=OK"
+        mtd -r erase rootfs_data;
+        break;;
+    restore)
+        echo "Test=OK"
+        mtd erase rootfs_data;
+        break;;
+    fac_mode)
+        __mtd=$(find_mtd_part Factory)
+        if [[ "$OP" = "get" ]]; then
+            __flag=`dd if=$__mtd bs=1 skip=36 count=2 2>/dev/null | hexdump -e '/2 "%02X"'`
+            if [[ "$__flag" = "1111" ]]; then
+                echo "fac_mode=Y"
+            else
+                echo "fac_mode=N"
+            fi
+        fi
+
+        if [[ "$OP" = "set" ]]; then
+            if [[ -n "$2" ]]; then
+                # Only "Y" means yes
+                if [[ $2 = "Y" ]]; then
+                    echo -n -e $'\x11\x11' | dd bs=1 seek=36 of=$__mtd count=2 conv=notrunc 2>/dev/null
+                else
+                    echo -n -e $'\xff\xff' | dd bs=1 seek=36 of=$__mtd count=2 conv=notrunc 2>/dev/null
+                fi
+                echo "Test=OK"
+            else
+                echo "Test=NG"
+            fi
+        fi
+        break;;
+    2.4g_insmod)
+        if insmod /lib/modules/3.10.14/mt7620.ko >/dev/null 2>&1; then
+            ifconfig ra0 up
+            echo "Test=OK"
+        else
+            echo "Test=NG"
+        fi
+        break;;
+    5.8g_insmod)
+        if insmod /lib/modules/3.10.14/mt76x2e.ko >/dev/null 2>&1; then
+            ifconfig rai0 up
+            echo "Test=OK"
+        else
+            echo "Test=NG"
+        fi
+        break;;
+    *)
+        exit 1;
+esac
+
+trap - EXIT
+exit 0

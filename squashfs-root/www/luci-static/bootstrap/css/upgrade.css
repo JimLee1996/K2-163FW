@@ -1,0 +1,96 @@
+body{
+	font-family: "Microsoft YaHei";
+	overflow: hidden;
+}
+.fotter{
+	bottom: 0;
+	border-top:1px solid #FFFFFF;
+	width: 100%;
+	height: 40px;
+}
+.fotter .router_msg_div{
+	text-align: center;
+	display: inline-block;
+	float: right;
+}
+.router_msg_div .software_version_span{
+	height: 100%;
+	margin-right:5px; 
+	line-height:60px ;
+	color:#FFFFFF;
+}
+.router_msg_div  .mac_span{
+	height: 100%;
+	margin-right:5px; 
+	line-height:60px ;color:#FFFFFF;
+}
+.router_msg_div  .hotline_span{
+	height: 100%;
+	float: right;
+	margin-right:10px; 
+	line-height:60px ;color:#FFFFFF;
+}
+.upgrade_center{
+	margin: 0 auto;
+	text-align: center;
+	margin-top:100px;
+	width: 500px;
+	height: 400px;
+}
+.upgrade_msg{
+	text-align: center;
+	margin-top:30px;
+	color: #FFFFFF;
+}
+.upgrade_msg_span1{
+	font-size: 20px;
+	color: #F08300;
+}
+.upgrade_msg_span2{
+	font-size: 16px;
+	display: block;
+	margin-top: 20px;
+	color: #666666;
+}
+.progress_div{
+	margin: 0 auto;
+	margin-top: 50px;
+	width: 484px;
+	border: 1px solid #F08300;
+	height: 20px;
+	background:#FFF;
+	-webkit-border-radius:10px;
+	-moz-border-radius:10px;
+	border-radius:10px; 
+	z-index: 9;
+	/*behavior: url(/luci-static/bootstrap/css/iecss3.htc);*/
+}
+.progress_bar_div{
+	background: #F5B364;
+	margin: 2px 2px;
+	height: 14px;
+	position: relative;
+	-webkit-border-radius:7px;
+	-moz-border-radius:7px;
+	border-radius:7px; 
+	z-index: 11;
+	width: 12px;
+	/*behavior: url(/luci-static/bootstrap/css/iecss3.htc);*/
+}
+.progress_bar_circle_div{
+	height: 12px;
+	width: 12px;
+	background: #F08300;
+	float:right;
+	margin: 1px 1px;
+	z-index: 10;
+	-webkit-border-radius:100%;
+	-moz-border-radius: 100%;
+	border-radius:100%;
+	/*behavior: url(/luci-static/bootstrap/css/iecss3.htc);*/
+}
+@media (max-height:	625px){
+	.login_fotter{
+		position: relative;
+	}
+}

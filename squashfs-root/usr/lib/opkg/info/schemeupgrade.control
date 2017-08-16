@@ -1,0 +1,8 @@
+Package: schemeupgrade
+Version: 1.0-1
+Depends: libc, libpthread, libuci
+Source: package/phicomm/schemeupgrade
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 25224
+Description:  策略升级程序，服务器远程向路由器推送软件升级版本和升级策略。	

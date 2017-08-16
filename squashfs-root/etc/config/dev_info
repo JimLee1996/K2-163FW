@@ -1,0 +1,5 @@
+config dev_info 'dev_info'
+	option hw_id "36b0d8b1ee52c282284e2c758717f559"
+	option product_id "ecebd75fc367b9aa41be06278689dc63"
+	option dg_ver "22.5.7.118"
+	list retail_region "CN"

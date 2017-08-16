@@ -1,0 +1,4 @@
+/usr/lib/lua/luci/view/safeset/safeset.htm
+/etc/config/safeset
+/etc/init.d/safeset
+/usr/lib/lua/luci/controller/safeset.lua

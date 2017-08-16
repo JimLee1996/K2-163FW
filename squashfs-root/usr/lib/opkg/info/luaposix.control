@@ -1,0 +1,10 @@
+Package: luaposix
+Version: v32-1
+Depends: libc, lua, librt, luabitop
+Source: feeds/packages/lang/luaposix
+Section: lang
+Maintainer: Maxim Storchak <m.storchak@gmail.com>
+Architecture: ramips_24kec
+Installed-Size: 25429
+Description:  luaposix is a general POSIX library for Lua providing access
+ to various low level libc functions.

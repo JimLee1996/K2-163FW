@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/model/cbi/admin_wifiset/wifiset.lua
+/usr/lib/lua/luci/i18n/wifiset.zh-cn.lmo
+/etc/nvram2uci/wifiset

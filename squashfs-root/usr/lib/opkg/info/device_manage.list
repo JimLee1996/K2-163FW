@@ -1,0 +1,5 @@
+/etc/uci-defaults/config_change
+/etc/config/device_manage
+/etc/hotplug.d/ip_event/10-device_manage
+/etc/init.d/device_manage
+/usr/bin/device_manage_set

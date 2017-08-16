@@ -1,0 +1,76 @@
+<div <% if self.centerclass == "no_margin_left" then %>class="height_45<% elseif self.centerclass == "no_margin_left200" then %>class="height_45 margin_left200_class<% elseif self.centerclass == "margin_left_40per" then %> class="height_45 margin_left_per_class <% else %>class="height_45<% end %><% if self.error and self.error[section] then %> cbi-value-error<% end %><% if self.last_child then %> cbi-value-last<% end %>" id="cbi-<%=self.config.."-"..section.."-"..self.option%>" <% if self.show_flag or self.show_help then %>style="float:left;"<% end %>>
+    <%- if self.widget == "on_off_button" then -%>
+        <label class="link-span" <%=attr("for", cbid) %> >
+            <%-=self.title-%>
+        </label>
+    <%- end -%>
+    <%- if self.title and #self.title > 0 then -%>  <% if self.centerclass then %><div class="cbi-value-field cbi_checkbox"> <%else%><div class="cbi-value-field" style="margin-top:4px; float:left;margin-left:15px;" ><% end %> <%- end -%>
+        <input type="hidden" value="1" <% if self.widget == "on_off_button" then%> id="flag_cbid-<%=self.config.."-"..section.."-"..self.option%>" <% end %><%=
+        attr("name", "cbi.cbe." .. self.config .. "." .. section .. "." .. self.option)
+    %> />
+    <% if self.widget == "on_off_button" then -%>
+        <input onclick="cbi_d_update(this.id)" onchange="cbi_d_update(this.id)" type="hidden"<%=
+        attr("id", cbid) .. attr("name", cbid)%> value="<%=tostring(self:cfgvalue(section) or self.default)%>" />
+        <img onclick="<%=self.option%>_func()" id="<%=cbid%>_img" <%= attr("name", cbid) %>
+        <%if tostring(self:cfgvalue(section) or self.default) == "1" then %>
+            src = "<%=media%>/images/switch_on.png" />
+        <% else %>
+            src = "<%=media%>/images/switch_off.png" />
+        <% end %>
+        <script type="text/javascript">
+        function <%=self.option%>_func() { 
+            var enable=document.getElementById('<%=cbid%>').value;
+            if(enable=="1") {
+                document.getElementById('<%=cbid%>_img').src="<%=media%>/images/switch_off.png";
+                document.getElementById('flag_cbid-<%=self.config.."-"..section.."-"..self.option%>').value="0";
+                document.getElementById('<%=cbid%>').value="0";
+                document.getElementById('<%=cbid%>').click(); 
+            }else{
+                document.getElementById('<%=cbid%>_img').src="<%=media%>/images/switch_on.png";
+                document.getElementById('flag_cbid-<%=self.config.."-"..section.."-"..self.option%>').value="1";
+                document.getElementById('<%=cbid%>').value="1";
+                document.getElementById('<%=cbid%>').click(); 
+            }
+    <% if self.cbi_apply_click then %>
+        $("input[name='cbi.apply']").click();
+    <% end %>
+        }
+        </script>
+    <div style="clear:both;"></div>
+    <% else %>
+        <span>
+            <input class="hidden-input hidden_checkbox" onclick="<% if self.sync_value then %>sync_value_<%=self.option%>();<%end%> cbi_d_update(this.id);" onchange="cbi_d_update(this.id)" type="checkbox" 
+            <%- if self.idname then -%>
+                id = "<%=self.idname%>"
+                <%else%>
+                <%=attr("id", cbid)%>
+                <%end%>
+            <%=
+                attr("id", cbid) .. attr("name", cbid) .. attr("value", self.enabled or 1) ..
+                ifattr((self:cfgvalue(section) or self.default) == self.enabled, "checked", "checked")
+            %> />
+            <span style="margin-left:-18px;"></span>
+        </span>
+    <% end %>
+    <%- if self.title and #self.title > 0 and self.widget ~= "on_off_button" then -%>
+        <span class="cbi-value-title" <%=attr("for", cbid) %>>
+            <%-=self.title-%>
+        </span>
+    <%- end -%>
+
+    <%- if self.sync_value then -%>
+    <script type="text/javascript">
+        function sync_value_<%=self.option%>()
+        {
+            if(document.getElementById("<%=self.idname%>").checked == true)
+                document.getElementById("<%=self.sync_id%>").checked = true;
+            else
+                document.getElementById("<%=self.sync_id%>").checked = false;
+        }
+    </script>
+    <%- end -%>
+
+<%+cbi/valuefooter%>
+<% if self.clear_float then %>
+<div style="clear:both;"></div>
+<% end %>

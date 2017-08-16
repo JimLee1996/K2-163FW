@@ -1,0 +1,368 @@
+<%+header%>
+
+<div class="row list_row_div">
+	<div class="col-md-1 col-xs-1" ></div>
+	<div class="col-md-10 col-xs-10 list_col-md-10">
+		<div class="list_body_div list_body_width content">
+
+			<div class="title_span">
+				<span>终端管理</span>
+				<div class="title_underline"></div>
+			</div>
+			<div class="left_second_title_div">当前连接设备：</div>
+			<div class="tableParentDiv">
+				<table id="onlineTbl" class="tableList" frame=hsides>
+					<tr  style="height: 40px;">
+						<th >设备名称</th>
+						<th >IP地址和MAC地址</th>
+						<th >当前速度KB/S</th>
+						<th >限速值KB/S</th>
+						<th style="border-right:1px solid #FFFFFF;">允许上网</th>
+					</tr>
+				</table>
+			</div>
+
+			<form name="device_manage_form" id="device_manage_form" method="post" action='/Local'>
+				<input type="hidden" name="MAC" id="dev_mac"></input>
+				<input type="hidden" name="IP"  id="dev_ip"></input>
+				<input type="hidden" name="DeviceRename" id="dev_DeviceRename"></input>
+				<input type="hidden" name="BlockUser" id="dev_BlockUser"></input>
+				<input type="hidden" name="DownMax" id="dev_DownMax"></input>
+				<input type="hidden" name="UpMax" id="dev_UpMax"></input>
+			</form>
+
+			<div class="defaultDiv"></div>
+			<div class="leftSecondTitle">禁止上网设备：</div>
+			<div class="tableParentDiv">
+				<table id="forbidTbl" class="tableList" frame=hsides >
+					<tr>
+						<th >设备名称</th>
+						<th >MAC地址</th>
+						<th style="border-right:1px solid #FFFFFF;">允许上网</th>
+					</tr>
+				</table>
+			</div>
+
+		</div><!-- end center -->
+	</div>
+	<div class="col-md-1 col-xs-1"></div>
+</div>
+
+<script type="text/javascript">
+	var clients;
+	var dev_timer;
+	function initClassFun() {
+		$(".speedLimit input").focus(function(){
+			clearInterval(dev_timer);
+			if($(this).val()=="限速值"){
+				$(this).val("");
+			}
+			$(this).css("text-decoration","none")
+			$(this).css("border","1px solid #999999");
+		}).blur(function(){
+			speed_set(this, clients);
+			clearInterval(dev_timer);
+			dev_timer=self.setInterval(runajax, 3000);
+
+		});
+
+		$(".speedLimit input").keypress(function(e){ 
+			if (e.keyCode == 13) {
+				$(this).blur();
+			}
+		});
+
+		$(".hostname_save").click(function(){
+			var temp_tr = $(this).parents("tr");
+			var i = $(temp_tr).attr("value");
+			var str_name  = $(temp_tr).find(".hostnameInput").val();
+			var configure = {"MAC":clients[i].MAC, "IP":clients[i].IP, "DeviceRename":str_name, "isBind":clients[i].isBind, "ifType":clients[i].ifType, "BlockUser":clients[i].BlockUser, "UpMax":clients[i].UpMax, "DownMax":clients[i].DownMax};
+			if(str_name.length == 0 || clients[i].DeviceRename== str_name) {
+				if (str_name.length == 0) {
+					Alert("设备名称不能为空");
+				}
+				$(temp_tr).find(".hostnameInput").hide();
+				$(temp_tr).find(".hostname_temp").show();
+				$(this).hide();
+				$(this).prev("span").show();
+				return false;
+			}
+			$("#dev_DeviceRename").val(str_name);
+			if (document.device_manage_form.cbi_validators) {
+				document.device_manage_form.cbi_validators = null;
+			}
+			cbi_validate_field("dev_DeviceRename",false,"and(checkspecialchar,sperangelength(1,32))","设备名称字符长度：",error_msg);
+
+			if(!cbi_validate_form(document.device_manage_form,null,Alert)) {
+				$(temp_tr).find(".hostnameInput").unbind("blur");
+				$(temp_tr).find(".hostnameInput").val(str_name);
+				$(temp_tr).find(".hostnameInput").hide();
+				$(temp_tr).find(".hostname_temp").show();
+				$(this).hide();
+				$(this).prev("span").show();
+				return false;
+			}
+			saveCfg(configure, function(ret){
+				console.log(ret);
+			});
+			$(temp_tr).find(".hostname_temp").val(str_name);
+			$(temp_tr).find(".hostnameInput").hide();
+			$(temp_tr).find(".hostname_temp").show();
+			$(this).hide();
+			$(this).prev("span").show();
+			clearInterval(dev_timer);
+			dev_timer=self.setInterval(runajax, 3000);
+		});
+
+		$(".icon-edit").click(function(){
+			clearInterval(dev_timer);
+			var temp_td = $(this).parents("td");
+			$(temp_td).find(".hostname_temp").hide();
+			$(temp_td).find(".hostnameInput").show();
+			$(this).hide();
+			$(this).next("span").show();
+			
+		});
+
+		$(".hostnameInput").parents(".tdClass").on("mouseleave",function(){
+			show_hostname($(this).find(".hostnameInput"));
+		})
+
+		$(".binding_a").click(function(){
+			var i=$(this).parents("tr").attr("value");
+			var configure = {"MAC":clients[i].MAC, "IP":clients[i].IP, "DeviceRename":clients[i].DeviceRename, "isBind":clients[i].isBind, "ifType":clients[i].ifType, "BlockUser":clients[i].BlockUser, "UpMax":clients[i].UpMax, "DownMax":clients[i].DownMax};
+			configure.isBind = 1;
+			saveCfg(configure, function(ret){
+				console.log(ret);
+			});
+		});
+
+		$(".unbinding_a").click(function(){
+			var i=$(this).parents("tr").attr("value");
+			var configure = {"MAC":clients[i].MAC, "IP":clients[i].IP, "DeviceRename":clients[i].DeviceRename, "isBind":clients[i].isBind, "ifType":clients[i].ifType, "BlockUser":clients[i].BlockUser, "UpMax":clients[i].UpMax, "DownMax":clients[i].DownMax};
+			configure.isBind = 0;
+			saveCfg(configure, function(ret){
+				console.log(ret);
+			});
+		});
+
+		$(".switch_open_close").click(function(){
+			var i = $(this).parents("tr").attr("value");
+			var str_img = $(this).attr("src");
+			var configure = {"MAC":clients[i].MAC, "IP":clients[i].IP, "DeviceRename":clients[i].DeviceRename, "isBind":clients[i].isBind, "ifType":clients[i].ifType, "BlockUser":clients[i].BlockUser, "UpMax":clients[i].UpMax, "DownMax":clients[i].DownMax};
+			if(str_img == "/luci-static/bootstrap/images/switch_off.png"){
+				$(this).attr("src", "/luci-static/bootstrap/images/switch_on.png");
+				configure.BlockUser = 0;}
+			else{
+				$(this).attr("src", "/luci-static/bootstrap/images/switch_off.png");
+				configure.BlockUser = 1;}
+			saveCfg(configure, function(ret){
+				console.log(ret);
+			});
+		});
+
+		$(".dev_tr").on("mouseenter", function (){
+			$(this).css("background","#FFF9F3");
+			$(this).find(".icon-edit").css("opacity","1");
+			$(this).find(".icon-edit").css("filter","alpha(opacity=100)");
+			$(this).find(".binding_a span").css("opacity","1");
+			$(this).find(".binding_a span").css("filter","alpha(opacity=100)");
+			$(this).find(".bind_a").css("opacity","1");
+			$(this).find(".bind_a").css("filter","alpha(opacity=100)");
+			$(this).find(".unbinding_a span").css("opacity","1");
+			$(this).find(".unbinding_a span").css("filter","alpha(opacity=100)");
+		}).on("mouseleave",function(){
+			$(this).css("background","#FFFFFF");
+			$(this).find(".icon-edit").css("opacity","0")
+			$(this).find(".icon-edit").css("filter","alpha(opacity=0)");
+			$(this).find(".binding_a span").css("opacity","0");
+			$(this).find(".binding_a span").css("filter","alpha(opacity=0)");
+			$(this).find(".bind_a").css("opacity","0");
+			$(this).find(".bind_a").css("filter","alpha(opacity=0)");
+			$(this).find(".unbinding_a span").css("opacity","0");
+			$(this).find(".unbinding_a span").css("filter","alpha(opacity=0)");
+			$(this).find(".hostname_save").hide();
+			$(this).find(".hostnameInput").hide();
+			$(this).find(".editSpan").show();
+			$(this).find(".hostname_temp").show();
+			clearInterval(dev_timer);
+			dev_timer=self.setInterval(runajax, 3000);
+		});
+	}
+
+	$(function() {
+		runajax();
+		dev_timer=self.setInterval(runajax, 3000);
+	});
+
+	function runajax() {
+		$.ajax({
+			type:"post",
+			url:"/LocalClientList.asp?action=get",
+			success:function(urlInfo) {
+				clients = urlInfo.retClientInfo.Clientlist;
+				initClientsTbl(clients);
+				initClassFun();
+			}
+		});
+	}
+
+
+	function onclineDevHtm(index, client) {
+		var bindStr,
+		UpMaxStr,
+		DownMaxStr,
+		device_name;
+		if (client.DeviceRename == "" || client.DeviceRename == "Unknown") {
+			device_name = client.HOSTNAME;
+		}
+		else {
+			device_name = client.DeviceRename;
+		}
+		client.upRate = (client.upRate / 1024).toFixed(2);
+		client.upRate = client.upRate == 0 ? 0 : client.upRate;
+		client.downRate = (client.downRate / 1024).toFixed(2);
+		client.downRate = client.downRate == 0 ? 0 : client.downRate;
+
+		if (0 == client.isBind) {
+			bindStr = '<a class="binding_a" href=""><span>绑定</span></a>';
+		}
+		else{
+			bindStr = '<span class="bind_a">已绑定</span><a class="unbinding_a" href=""><span>解绑</span></a>';
+		}
+		UpMaxStr = (0 == client.UpMax) ? ('value="限速值" style="text-decoration:underline;"') : ('value="' + client.UpMax + '"');
+		DownMaxStr = (0 == client.DownMax) ? ('value="限速值" style="text-decoration:underline;"') : ('value="' + client.DownMax + '"');
+
+		return '<tr class="dev_tr" value="' + index + '">' +
+		'<td class="tdClass">' +
+		'<div class="device_msg">' +
+		'<img class="deviceImg" src="/luci-static/bootstrap/images/brand/' + client.brand + '.png"/>' +
+		'<input class="hostname_temp" title="' + device_name + '" value="' + device_name + '" readonly="readonly"></input>' +
+		'<input class="hostnameInput" title="' + device_name + '" value="' + device_name + '"></input>' +
+		'<span class="icon-edit editSpan" style="" ></span>' +
+		'<span class="hostname_save">确定</span>' +
+		'</div>' +
+		'</td>' +
+		'<td class="device_manager_table_td2">' +
+		'<div class="device_manager_table_td2_div1">' + client.IP + '</div>' +
+		'<div class="device_manager_table_td2_div2">' +
+		'<span class="device_mac">' + client.MAC + '</span>' + bindStr +
+		'</div>' +
+		'</td>' +
+		'<td class="device_manager_table_td3">' +
+		'<div class="colTd" style="">' +
+		'<span class="cur_speed_icon">↑</span>' +
+		'<span class="device_manager_table_td3_speed_span">' +client.upRate + '</span>' +
+		'</div>' +
+		'<div class="colTd" style="">' +
+		'<span class="cur_speed_icon">↓</span>' +
+		'<span class="device_manager_table_td3_speed_span">' + client.downRate + '</span>' +
+		'</div>' +
+		'</td>' +
+		'<td class="device_manager_table_td4">' +
+		'<div class="speedLimit">' +
+		'<span style="">↑</span>' +
+		'<input name="UpMax" id="UpMax" ' + UpMaxStr + '/>' +
+		'</div>' +
+		'<div class="speedLimit">' +
+		'<span style="">↓</span>' +
+		'<input name="DownMax" id="DownMax" ' + DownMaxStr + '/>' +
+		'</div>' +
+		'</td>' +
+		'<td style="border-right:1px solid #FFF;">' +
+		'<div class="imgSwitchDiv"><img class="img_change switch_open_close" src="/luci-static/bootstrap/images/switch_on.png"></div>' +
+		'</td>' +
+		'</tr>';
+	}
+
+	function forbidDevHtm(index, client) {
+		var device_name;
+		if (client.DeviceRename == "" || client.DeviceRename == "Unknown") {
+			device_name = client.HOSTNAME;
+		}
+		else {
+			device_name = client.DeviceRename;
+		}
+		return '<tr value="' + index + '">' +
+		'<td>' +
+		'<img class="deviceImg" src="/luci-static/bootstrap/images/brand/' + client.brand + '.png"/><span>' + device_name + '</span>' +
+		'</td>' +
+		'<td><span>' + client.MAC + '</span></td>' +
+		'<td style="border-right:1px solid #FFFFFF;">' +
+		'<div class="imgSwitchDiv"><img class="img_change switch_open_close" src="/luci-static/bootstrap/images/switch_off.png"></div>' +
+		'</td>' +
+		'</tr>';
+	}
+
+	function initClientsTbl(clients) {
+		$('#onlineTbl').empty();
+		$('#forbidTbl').empty();
+		$('#onlineTbl').append(
+			'<tr style="height: 40px;">' +
+			'<th >设备名称</th><th >IP地址和MAC地址</th><th >当前速度KB/S</th><th >限速值KB/S</th>' +
+			'<th style="border-right:1px solid #FFFFFF;">允许上网</th>' +
+			'</tr>');
+		$('#forbidTbl').append(
+			'<tr style="height: 40px;">' +
+			'<th >设备名称</th><th >MAC地址</th>' +
+			'<th style="border-right:1px solid #FFFFFF;">允许上网</th>' +
+			'</tr>');
+		var len = clients.length;
+		for (var i = 0; i < len; i++){
+			if (0 == clients[i].BlockUser) {
+				$('#onlineTbl').append(onclineDevHtm(i, clients[i]));
+			}else{
+				$('#forbidTbl').append(forbidDevHtm(i, clients[i]));
+			}
+		}
+	}
+
+	// 使用ajax保存数据
+	function saveCfg(configure, callback) {
+		$.ajax({
+			type:"get",
+			url:"/LocalMACConfig.asp?action=set",
+			data:configure,
+			success:callback
+		});
+	}
+
+	function show_hostname(cur_this){
+		$(cur_this).hide();
+		$(cur_this).prev("input").show();
+		$(cur_this).next(".editSpan").next(".hostname_save").hide();
+		$(cur_this).next(".editSpan").show();
+	}
+
+	function speed_set(obj, clients) {
+		var configure;
+		var str_name = $(obj).attr("name");
+		var i = $(obj).parents("tr").attr("value");
+		var str_speed_limit = $.trim($(obj).val());
+		if (str_speed_limit == "" || str_speed_limit == "0") {
+			str_speed_limit = 0;
+			$(obj).val("限速值");
+		}
+		var reg = /^\+?[0-9]*$/;
+		if ( !reg.test(str_speed_limit) || str_speed_limit > 4096 )
+		{
+			Alert("限速值输入范围为：0-4096");
+			return false;
+		}
+		$(obj).css("border","0px solid #999999");
+
+		if(str_name == "UpMax"){
+			 configure = {"MAC":clients[i].MAC, "IP":clients[i].IP, "DeviceRename":clients[i].DeviceRename, "isBind":clients[i].isBind, "ifType":clients[i].ifType, "BlockUser":clients[i].BlockUser, "UpMax":str_speed_limit, "DownMax":clients[i].DownMax};
+		}
+		else{
+			configure = {"MAC":clients[i].MAC, "IP":clients[i].IP, "DeviceRename":clients[i].DeviceRename, "isBind":clients[i].isBind, "ifType":clients[i].ifType, "BlockUser":clients[i].BlockUser, "UpMax":clients[i].UpMax, "DownMax":str_speed_limit};
+		}
+
+		saveCfg(configure, function(ret){
+			console.log(ret);
+		});
+	}
+
+</script>
+
+<%+footer%>

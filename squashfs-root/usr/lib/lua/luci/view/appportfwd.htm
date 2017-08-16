@@ -1,0 +1,537 @@
+<%+header%>
+<% local uci_t = require "luci.model.uci".cursor() %>
+<%
+local num = 0
+local fwd =  require "luci.controller.admin.appportfwdset"
+local lanip = uci_t:get("network", "lan", "ipaddr")
+local nm = uci_t:get("network", "lan", "netmask")
+local fwdrule = fwd.fetch_rule()
+local portfwd_enable = uci_t:get("appportfwd", "config", "enable")
+%>
+<script type="text/javascript" src="<%=media%>/js/advanced.js"></script>
+<script>
+	var fwdrule = <%=luci.http.write_json(fwdrule)%>
+</script>
+
+<script type="text/javascript">
+
+	function get_ip(str_ip)
+	{
+		var myIP=new Array();
+
+		myIP[0] = myIP[1] = myIP[2] = myIP[3] = myIP[4] = "";
+		if(str_ip != "")
+		{
+			var tmp=str_ip.split(".");
+			for (var i=1; i <= tmp.length; i++) myIP[i]=tmp[i-1];
+			myIP[0]=str_ip;
+		}
+		return myIP;
+	}
+
+	function get_network_id(ip, mask)
+	{
+		var id = new Array();
+		var ipaddr = get_ip(ip);
+		var subnet = get_ip(mask);
+
+		id[1] = ipaddr[1] & subnet[1];
+		id[2] = ipaddr[2] & subnet[2];
+		id[3] = ipaddr[3] & subnet[3];
+		id[4] = ipaddr[4] & subnet[4];
+		id[0] = id[1]+"."+id[2]+"."+id[3]+"."+id[4];
+		return id;
+	}
+
+	function checkrulename(name)
+	{
+		var textlength = 0;
+		if(name.length == 0)
+		{
+			Alert("<%:portfwd_rulename%><%:multlangjs_null%>");
+			return false;
+		}
+		for(var i = 0; i < name.length; i++)
+		{
+			if(name.charAt(i).match(/[\u00B7]/)
+				|| name.charAt(i).match(/[\u0022]/) || name.charAt(i).match(/[\u0026]/)
+				|| name.charAt(i).match(/[\u003E]/) || name.charAt(i).match(/[\u003C]/)//<>
+				|| name.charAt(i).match(/[\u005C]/) || name.charAt(i).match(/[\u0027]/)
+				|| name.charAt(i).match(/[\u0028]/) || name.charAt(i).match(/[\u0029]/)//()
+				|| name.charAt(i).match(/[\u007B]/) || name.charAt(i).match(/[\u007D]/)//{}
+				|| name.charAt(i).match(/[\u0025]/) || name.charAt(i).match(/[\u0024]/)
+				|| name.charAt(i).match(/[\u007E]/) || name.charAt(i).match(/[\u007C]/)
+				|| name.charAt(i).match(/[\u003A]/) || name.charAt(i).match(/[\u003B]/)//:;
+				|| name.charAt(i).match(/[\u002C]/) || name.charAt(i).match(/[\u0060]/))//,
+			{
+				Alert("<%:portfwd_rulename%><%:multlangjs_spec_1%>");
+				return false;
+			}
+			if(name.charAt(i).match(/[\u0391-\uFFE5]/))
+				textlength = textlength + 3;
+			else
+				textlength = textlength + 1;
+			if(textlength > 32)
+			{
+				Alert("<%:portfwd_rulename%><%:length between 1 to 32%>");
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function checkruleip(serverip)
+	{
+		if(serverip.length == 0)
+		{
+			Alert("<%:server IP%><%:multlangjs_null%>");
+			return false;
+		}
+		var ip= /^([1-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(([0-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){2}([1-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$/;
+		if(ip.exec(serverip) == null)
+		{
+			Alert("<%:server IP%><%:multlangjs_invalid%>");
+			return false;
+		}
+		var ipaddr = serverip.split(".");
+		if(ipaddr.length != 4)
+		{
+			Alert("<%:server IP%><%:multlangjs_invalid%>");
+			return false;
+		}
+		for(i = 0; i < 4; i++)
+		{
+			if(ipaddr[i] == "")
+			{
+				Alert("<%:server IP%><%:multlangjs_invalid%>");
+				return false;
+			}
+		}
+		if(parseInt(ipaddr[0]) == 127 || ( parseInt(ipaddr[0])>223 && parseInt(ipaddr[0])<240))
+		{
+			Alert("<%:server IP%><%:multlangjs_invalid%>");
+			return false;
+		}
+		if(parseInt(ipaddr[0]) >0 && parseInt(ipaddr[0]) <255 && parseInt(ipaddr[1])>=0 && parseInt(ipaddr[1])<=255 && parseInt(ipaddr[2])>=0 && parseInt(ipaddr[2])<=255 && parseInt(ipaddr[3])>0 && parseInt(ipaddr[3])<255)
+		{
+			var lan_ip = "<%=lanip%>";
+			var nm = "<%=nm%>";
+			var net1, net2;
+			net1 = get_network_id(serverip,nm);
+			net2 = get_network_id(lan_ip, nm);
+			if(serverip == lan_ip)
+			{
+				Alert("<%:portfwd ip cannot be equal to lanip%>");
+				return false;
+			}
+			if(net1[0] != net2[0])
+			{
+				Alert("<%:portfwd ip and lanip should be on the same segment%>");
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			Alert("<%:server IP%><%:multlangjs_invalid%>");
+			return false;
+		}
+	}
+
+	function checkextport(exterport)
+	{
+		if(exterport.length == 0)
+		{
+			Alert("<%:exterport_null%>");
+			return false;
+		}
+
+		exter = exterport.split("-");
+		if(exter[0])
+		{
+			if(exter[0].match(/^-?[0-9]+$/) == null)
+			{
+				Alert("<%:exterport_invalid%>");
+				return false;
+			}
+		}
+		else
+		{
+			Alert("<%:exterport_invalid%>");
+			return false;
+		}
+
+		if(exterport.indexOf("-") >= 0)
+		{
+			if(exterport.match(/^([0-9]+)-([0-9]+)$/) == null)
+			{
+				Alert("<%:exterport_invalid%>");
+				return false;
+			}
+
+			if(exter[1])
+			{
+				if(exter[1].match(/^-?[0-9]+$/) == null)
+				{
+					Alert("<%:exterport_invalid%>");
+					return false;
+				}
+			}
+			else
+			{
+				Alert("<%:exterport_invalid%>");
+					return false;
+			}
+		}
+
+		var extstartport = parseInt(exter[0]);
+		var extendport = parseInt(exter[1]);
+		if(extstartport < 1 || extstartport > 65535)
+		{
+			Alert("<%:exterport should be in 1-65535%>");
+			return false;
+		}
+
+		if(extendport)
+		{
+			if(extendport < 1 || extendport > 65535)
+			{
+				Alert("<%:exterport should be in 1-65535%>");
+				return false;
+			}
+			if(extstartport > extendport)
+			{
+				Alert("<%:exterport_invalid%>");
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function checkintport(exterport, interport)
+	{
+		if(interport.length == 0)
+		{
+			Alert("<%:interport_null%>");
+			return false;
+		}
+
+		inter = interport.split("-");
+		if(inter[0])
+		{
+			if(inter[0].match(/^-?[0-9]+$/) == null)
+			{
+				Alert("<%:interport_invalid%>");
+				return false;
+			}
+		}
+		else
+		{
+			Alert("<%:interport_invalid%>");
+				return false;
+		}
+
+		if((interport.indexOf("-") >= 0))
+		{
+			if(inter[1])
+			{
+				if(inter[1].match(/^-?[0-9]+$/) == null)
+				{
+					Alert("<%:interport_invalid%>");
+					return false;
+				}
+			}
+			else
+			{
+				Alert("<%:interport_invalid%>");
+					return false;
+			}
+		}
+		var intstartport = parseInt(inter[0]);
+		var intendport = parseInt(inter[1]);
+		if(intstartport < 1 || intstartport > 65535)
+		{
+			Alert("<%:interport should be in 1-65535%>");
+			return false;
+		}
+		if(intendport)
+		{
+			if(intendport < 1 || intendport > 65535)
+			{
+				Alert("<%:interport should be in 1-65535%>");
+				return false;
+			}
+		}
+
+		if(intendport)
+		{
+			if(exterport != interport)
+			{
+				Alert("<%:interport is error%>");
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function edit_rule(line, name, exterport, serverip, interport, proto)
+	{
+		exterport = exterport.replace(/\b(0+)/gi,"");
+		interport = interport.replace(/\b(0+)/gi,"");
+		XHR.get('<%=luci.dispatcher.build_url("admin","more_forward", "appportfwdset" ,"edit")%>' + '/' + line + '/' + name + '/' + exterport + '/' + serverip + '/' + interport + '/' + proto, null,
+			function(x, s)
+			{
+				location.href="<%=luci.dispatcher.build_url("admin", "more_forward", "appportfwdset")%>";
+			}
+		);
+	}
+
+	function dele_rule(line)
+	{
+		XHR.get('<%=luci.dispatcher.build_url("admin","more_forward", "appportfwdset" ,"dele")%>' + '/' + line, null,
+			function(x, s)
+			{
+				location.href="<%=luci.dispatcher.build_url("admin", "more_forward", "appportfwdset")%>";
+			}
+		);
+	}
+
+	$(function(){
+		$(".advanced .dropdown_button").next("ul").children("li").click(function(){
+			var option_val = $(this).attr("value");
+			$(this).parent("ul").prev("div").find("input[name=portProtocol]").val(option_val);
+		});
+		<%
+			local number = 0
+			for i, v in ipairs(fwdrule) do
+				number = number + 1
+			end
+			if number > 9 then
+		%>
+		$("#blank_row").hide();
+		<% end %>
+
+		$(".edit_confirm").click(function(){
+			var val = $(this).attr("value");
+			if(val == "edit"){
+				$(this).parents("tr").find("input").removeAttr("readonly");
+				$(this).parents("tr").find("input").css("padding-left","6px");
+				$(this).parents("tr").find(".icon-edit").hide();
+				$(this).parents("tr").find(".icon-delete").hide();
+				$(this).parents("tr").find(".confirm_btn").show();
+				$(this).parents("tr").find("#editportDiv").show();
+				$(this).parents("tr").find("#disportDiv").hide();
+				$(this).parents("tr").find("#editportDivin").show();
+				$(this).parents("tr").find("#disportDivin").hide();
+				$(this).parents("tr").find("#editprotoDiv").show();
+				$(this).parents("tr").find("#disprotoDiv").hide();				
+				$(this).parents("tr").find(".edit_confirm").attr("value","confirm");
+			}else{
+				var name = $(this).parents("tr").find("#rulename").val();
+				var exterport = $(this).parents("tr").find("#exterport").val();
+				var serverip = $(this).parents("tr").find("#ruleserverip").val();
+				var interport = $(this).parents("tr").find("#interport").val();
+				var proto = $(this).parents("tr").find("input[name=portProtocol]").val();
+				var line = $(this).parents("tr").attr("value");
+
+				if(checkrulename(name) &&  checkextport(exterport) && checkruleip(serverip) && checkintport(exterport, interport))
+				{
+					XHR.get('<%=luci.dispatcher.build_url("admin", "more_forward", "appportfwdset","portcheck")%>' + '/' + exterport + '/' + interport + '/' + line + '/' + proto, null,
+					function(x, checkport)
+					{
+						if(checkport)
+						{
+							if(checkport[0].checkerror == 1)
+							{
+								Alert("<%:port conflict%>");
+								return false;
+							}
+							if(checkport[0].checkerror == 2)
+							{
+								Alert("<%:port conflict with remotemgt%>");
+								return false;
+							}
+						}
+						else
+						{
+							edit_rule(line,name,exterport,serverip,interport,proto);
+							$(this).parents("tr").find("input").attr("readonly","readonly");
+							$(this).parents("tr").find(".confirm_btn").hide();
+							$(this).parents("tr").find(".icon-edit").show();
+							$(this).parents("tr").find(".icon-delete").show();
+							$(this).parents("tr").find(".icon-edit").attr("value","edit");
+						}
+					}
+					);
+				}
+				else
+				{
+					return false;
+				}
+			}
+		});
+
+		$(".delete_confirm").click(function(){
+			var line = $(this).parents("tr").attr("value");
+			dele_rule(line);
+		});
+
+		$("#save_fwd").click(function(){
+			var radio_switch = $("#radio_val").val();
+			$("#switch").val(radio_switch);
+			$("#wan_check_modal").modal("show");
+			setTimeout(function(){$("#fwd_config").submit();},1000);
+			
+		});
+	});
+
+</script>
+
+<div class="setcontent advanced" id="portForwardDiv">
+	<div class="title-span"><span ><%:portfwd%></span></div>
+	<div class="title-underline"></div>
+	<div class="setlinediv margintop-30">
+		<span class="link-span"><%:port fwd:%></span>
+		<div class="radiodiv">
+			<img class="radioSwitch setval showOrHide" name="portfwd" <%if portfwd_enable == "1" then%> src="<%=media%>/images/icon_radio_on.png"<%else%> src="<%=media%>/images/icon_radio_off.png"<%end%> value="1" />
+			<span><%:enable%></span> 
+		</div>
+		<div class="radiodiv">
+			<img class="radioSwitch setval showOrHide" name="portfwd" <%if portfwd_enable == "1" then%> src="<%=media%>/images/icon_radio_off.png"<%else%> src="<%=media%>/images/icon_radio_on.png"<%end%> value="0" />
+			<span><%:disable%></span>
+		</div>		
+		<input id="radio_val" type="hidden" value="<%=portfwd_enable%>" />
+		<a href="#" title="此功能可在您的路由器上打开一个范围内的端口，并通过这些端口转发数据到LAN上的一台设备">
+			<div class="iconhelpdiv">
+				<span class="icon-help color-orange"></span>
+			</div>
+		</a>		
+		<form name="fwd_config" id="fwd_config" action="<%=REQUEST_URI%>/set" method="post">
+			<input type="hidden" name="switch" id="switch" />
+		</form>
+	</div>
+	<div id="portfwd" class="contentDisplay" <%if portfwd_enable == "0" then%> style="display: none;" <%end%>>
+		<div class="setlinediv margintop-30">
+			<span class="content-span width-350"><%:custom rules(max is 10):%></span>
+		</div>
+		<div class="margin-left-right5">
+			<table  id="portfwdTab" frame="hsides">
+				<tr class="height-31">
+					<th><%:order%></th>
+					<th><%:rule name%></th>
+					<th><%:external port%></th>
+					<th><%:server IP%></th>
+					<th><%:internal port%></th>
+					<th><%:proto%></th>
+					<th><%:operate%></th>
+				</tr>
+				<% for i, v in ipairs(fwdrule) do %>
+				<% num = num +1 %>
+				<tr value="<%=i%>" class="height-31">
+					<td class="td-order-num"><span><%=i%></span></td>
+					<td title="<%=v.name%>">
+						<div style="margin: 0 4px;">
+							<input class="input-small" id="rulename" value="<%=v.name%>" readonly="readonly" maxlength="32"/>
+						</div>
+
+					</td>
+					<td style="width: 100px;">
+						<div style="text-align: left;margin-left: 6px;" id="disportDiv">
+							<span><%=v.exterport%></span>
+						</div>
+						<div style="text-align: left;margin-left: 4px;display: none;" id="editportDiv">
+							<input class="input-xsmall" id="exterport" value="<%=v.exterport%>" readonly="readonly" />
+						</div>
+					</td>
+
+					<td>
+						<div style="margin: 0 4px;">
+							<input class="input-middle"  id="ruleserverip" value="<%=v.serverip%>" readonly="readonly" />	
+						</div>
+
+					</td>
+					<td style="width: 100px;">
+						<div style="text-align: left;margin-left: 6px;" id="disportDivin">
+							<span><%=v.interport%></span>
+						</div>
+						<div style="text-align: left;margin-left: 4px;display: none;" id="editportDivin">
+							<input class="input-xsmall" id="interport" value="<%=v.interport%>" readonly="readonly" />
+						</div>
+					</td>
+					<td style="width: 99px;">
+						<div style="text-align: left;padding-left: 4px;" id="disprotoDiv">
+							<span><%if v.proto == "tcp" then%>TCP <%elseif v.proto == "udp" then%>UDP<%else%>TCP&UDP<%end%></span>
+						</div>
+						<div style="display: none;" id="editprotoDiv">
+							<div class="dropdown dropdown_div" style="width: 90px;margin: 0 auto;">
+								<div class="dropdown_button" onclick="dropdown_click(this)" id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<input name="select_opt"  readonly="readonly" onfocus="this.blur();" UNSELECTABLE="on" value='<%if v.proto == "tcp" then%>TCP<%elseif v.proto == "udp" then%>UDP<%else%>TCP&UDP<%end%>' style="width: 90px;margin: 0 0;padding-left: 0;cursor: pointer;"/>
+									<span class="icon-downarrow"></span>
+									<input name="portProtocol" type="hidden" value="<%=v.proto%>" />
+								</div>								
+								<ul class="dropdown-menu" aria-labelledby="dLabel">
+									<li value="tcp"><a value="TCP">TCP</a></li>
+									<li value="udp"><a value="UDP">UDP</a></li>
+									<li value="tcp+udp"><a value="TCP&UDP">TCP&UDP</a></li>
+								</ul>
+							</div>								
+						</div>
+					</td>
+					<td style="width:70px;">
+						<span class="icon-edit color-orange mouse-hover edit_confirm" value="edit"></span>
+						<span class="icon-delete color-orange mouse-hover delete_confirm"></span>
+						<span class="color-orange mouse-hover confirm_btn edit_confirm" style="display: none;"><%:confirm%></span>
+					</td>
+				</tr>
+				<% end %>
+				<tr class="height-31" id="blank_row">
+					<td class="td-order-num"><span><%=num+1%></span></td>
+					<td>
+						<div style="margin: 0 4px;">
+							<input class="input-small" style="padding-left: 6px;" id="rulename" value="" maxlength="32"/>
+						</div>
+					</td>
+					<td style="min-width: 100px;">
+						<div style="text-align: left;margin-left: 4px;">
+							<input class="input-xsmall" id="exterport" style="padding-left: 6px;" id="exterport" value="" />
+						</div>
+					</td>
+					<td>
+						<div style="margin: 0 4px;">
+							<input class="input-middle" style="padding-left: 6px;" id="ruleserverip" value="" />	
+						</div>						
+					</td>
+					<td style="min-width: 100px;">
+						<div style="text-align: left;margin-left: 4px;">
+							<input class="input-xsmall"  id="interport" style="padding-left: 6px;" id="interport" value="" />
+						</div>
+					</td>
+					<td style="width: 99px;">
+						<div class="dropdown dropdown_div" style="width: 90px;margin: 0 auto;">
+							<div class="dropdown_button" onclick="dropdown_click(this)" id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<input name="select_opt"  readonly="readonly" onfocus="this.blur();" UNSELECTABLE="on" value="TCP" style="width: 90px;margin: 0 0;padding-left: 6px;cursor: pointer;"/>
+								<span class="icon-downarrow"></span>
+								<input name="portProtocol" type="hidden" value="tcp" />
+							</div>								
+							<ul class="dropdown-menu" aria-labelledby="dLabel">
+								<li value="tcp"><a value="TCP">TCP</a></li>
+								<li value="udp"><a value="UDP">UDP</a></li>
+								<li value="tcp+udp"><a value="TCP&UDP">TCP&UDP</a></li>
+							</ul>
+						</div>
+
+					</td>
+					<td style="width:70px;">
+						<span class="icon-edit color-orange mouse-hover edit_confirm" value="edit" style="display: none;"></span>
+						<span class="icon-delete color-orange mouse-hover" style="display: none;"></span>
+						<span class="color-orange mouse-hover confirm_btn edit_confirm"><%:confirm%></span>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div class="setlinediv margintop-30">
+		<div type="button" id="save_fwd" class="button-square-lg btndiv"><%:Save%></div>
+	</div>
+</div>
+<%+footer%>

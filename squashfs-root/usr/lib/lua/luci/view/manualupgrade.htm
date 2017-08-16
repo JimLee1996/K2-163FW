@@ -1,0 +1,76 @@
+<%+header%>
+<%
+function get_ver()
+	local uci = require("luci.model.uci").cursor()
+	return uci:get("system", "system", "fw_ver") or "0.0.0.0"
+end
+%>
+
+<!-- manualUpgrade -->
+<div class="setcontent advanced" id="manualUpgradeDiv">
+	<div class="title-span"><span >手动升级</span></div>
+	<div class="title-underline"></div>
+	<div class="setlinediv margintop-30">
+		<span class="link-span3">当前固件版本：</span>
+		<span class="content-span"><%=get_ver()%></span>
+	</div>
+	<div class="setlinediv margintop-20">
+		<div>
+			<span class="link-span3">升级文件：</span>
+		</div>
+		<div>
+			<input type="text" name="fw_editview" id="fw_editview" class="input-text input-large" readonly="readonly" value="<%=img_name%>"/>
+			<form name="upload_fw" id="upload_fw" action="<%=REQUEST_URI%>/" method="post" enctype="multipart/form-data">
+				<input type="file" name="image" class="input-file height-40" accept=".bin" onchange="fw_selected(this)" />
+				<input type="hidden" name="step" id="step" value=<%=step or "0"%> />
+				<input type="hidden" name="img_name" id="img_name" />
+			</form>
+		</div>
+		<div class="icon-browse color-orange icon-div" style="margin-left: -50px;"></div>
+		<div>
+			<span class="color-orange" style="float: left;margin-top: 5px;margin-left: -25px;">浏览</span>
+		</div>
+	</div>
+	<div>
+		<% if prompt then %>
+		<script type="text/javascript">
+			Alert("<%=prompt%>");
+		</script>
+		<%end%>					
+	</div>
+	<div class="setlinediv" style="height: 34px;">
+		<div type="button" class="button-square-lg btndiv" id="upgradebtn">升 级</div>		
+	</div>
+	<div class="setlinediv margintop-30">
+		<span class="dload-span">温馨提示：官网下载新版软件，<a class="color-orange mouse-hover" style="text-decoration:underline" href="http://www.phicomm.com/cn/support.php/Soho/software_support/t/sm.html" target="_blank">请点此处</a></span>
+	</div>		
+</div><!--end manualUpgrade-->
+
+<script language = "javascript">
+	function fw_selected(obj){
+	    var file_name = obj.value;
+	    var last_index = file_name.lastIndexOf("\\");
+		$("#fw_editview").val(file_name.substring(last_index+1));
+		$("#img_name").val(file_name.substring(last_index+1));
+		$("#step").val("1");
+	}
+
+	$(function(){
+		<% if upgrading == "1" then %>
+			start_progress_bar(<%=wait_time%>);
+		<% end %>
+		$("#upgradebtn").click(function(){
+			var filename = $("#fw_editview").val();
+			if(filename == ""){
+				Alert("请指定升级文件！");
+				return false;
+			} else{
+				$("#wan_check_modal").find(".loading_msg_span").html("上传文件中...");
+				$("#wan_check_modal").modal("show");
+				document.upload_fw.submit();
+				return true;
+			}
+		});
+	});
+</script>
+<%+footer%>

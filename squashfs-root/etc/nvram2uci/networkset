@@ -1,0 +1,159 @@
+#!/bin/sh
+. /lib/functions/nvram2uci.sh
+#orig mac
+wanmac=`nvram get linux def_wan_hwaddr`
+proto=`nvram get linux wan_proto`
+if [ $proto == "dhcp" ]; then
+	uci set network.wan.proto=dhcp
+	# mtu
+	mtu=`nvram get linux wan_dhcp_mtu`
+	if [ -n "$mtu" ]; then
+		uci set network.wan.mtu=$mtu
+	fi
+	# mac clone
+	mac_clone_en=`nvram get linux mac_clone_en`
+	if [ $mac_clone_en == 1 ]; then
+		uci set network.wan.enable_advance=1
+		clonemac=`nvram get linux cl0macaddr`
+		if [ $clonemac != $wanmac ]; then
+			uci set network.wan.macoperate=2
+			uci set network.wan.mac_addr=$clonemac
+			uci set network.wan.ignore=0
+		fi
+	fi
+	# dns
+	dnsen=`nvram get linux wan_dnsmanual`
+	if [ $dnsen == 1 ]; then
+		uci set network.wan.enable_advance=1
+		firstdns=`nvram get linux wan_primary_dns`
+		uci set network.wan.dns1=$firstdns
+		uci set network.wan.dns_opt=1
+		seconddns=`nvram get linux wan_secondary_dns`
+		if [ -n $seconddns ]; then
+			uci set network.wan.dns2=$seconddns
+			dnsvalue=$firstdns" "$seconddns
+		else
+			dnsvalue=$firstdns
+		fi
+		uci set network.wan.dns="$dnsvalue"
+		uci set network.wan.peerdns=0
+	else
+		uci set network.wan.peerdns=1
+	fi
+	# pppoe
+	diamode=`nvram get linux wan_pppoedial_mode`
+	if [ -n "$diamode" ]; then
+		uci set network.wan.DiaMode=$diamode
+	fi
+	username=`nvram get linux wan_pppoe_user`
+	if [ -n "$username" ]; then
+		uci set network.wan.username=$username
+	fi
+	passwd=`nvram get linux wan_pppoe_pwd`
+	if [ -n "$passwd" ]; then
+		uci set network.wan.password=$passwd
+	fi
+	uci commit network
+elif [ $proto == "static" ]; then
+	uci set network.wan.proto=static
+	staticip=`nvram get linux wan_static_ipaddr`
+	if [ -n "$staticip" ]; then
+		uci set network.wan.ipaddr=$staticip
+	fi
+	staticnetmask=`nvram get linux wan_static_netmask`
+	if [ -n "$staticnetmask" ]; then
+		uci set network.wan.netmask=$staticnetmask
+	fi
+	staticgw=`nvram get linux wan_static_gateway`
+	if [ -n "$staticgw" ]; then
+		uci set network.wan.gateway=$staticgw
+	fi
+	firstdns=`nvram get linux wan_primary_dns`
+	if [ -n "$firstdns" ]; then
+		uci set network.wan.static_dns1=$firstdns
+		dnsvalue=$firstdns
+	fi
+	seconddns=`nvram get linux wan_secondary_dns`
+	if [ -n "$secondns" ]; then
+		uci set network.wan.static_dns2=$seconddns
+		dnsvalue=$dnsvalue" "$seconddns
+	fi
+	uci set network.wan.dns="$dnsvalue"
+	uci set network.wan.peerdns=0
+	uci set network.wan.dns_opt=0
+	staticmtu=`nvram get linux wan_static_mtu`
+	if [ -n "$staticmtu" ]; then
+		uci set network.wan.mtu=$staticmtu
+	fi
+	mac_clone_en=`nvram get linux mac_clone_en`
+	if [ $mac_clone_en == 1 ]; then
+		uci set network.wan.enable_advance=1
+		clonemac=`nvram get linux cl0macaddr`
+		if [ $clonemac != $wanmac ]; then
+			uci set network.wan.macoperate=2
+			uci set network.wan.mac_addr=$clonemac
+			uci set network.wan.ignore=0
+		fi
+	fi
+	# pppoe
+	diamode=`nvram get linux wan_pppoedial_mode`
+	if [ -n "$diamode" ]; then
+		uci set network.wan.DiaMode=$diamode
+	fi
+	username=`nvram get linux wan_pppoe_user`
+	if [ -n "$username" ]; then
+		uci set network.wan.username=$username
+	fi
+	passwd=`nvram get linux wan_pppoe_pwd`
+	if [ -n "$passwd" ]; then
+		uci set network.wan.password=$passwd
+	fi
+	uci commit network
+elif [ $proto == "pppoe" ]; then
+	uci set network.wan.proto=pppoe
+	diamode=`nvram get linux wan_pppoedial_mode`
+	if [ -n "$diamode" ]; then
+		uci set network.wan.DiaMode=$diamode
+	fi
+	username=`nvram get linux wan_pppoe_user`
+	if [ -n "$username" ]; then
+		uci set network.wan.username=$username
+	fi
+	passwd=`nvram get linux wan_pppoe_pwd`
+	if [ -n "$passwd" ]; then
+		uci set network.wan.password=$passwd
+	fi
+	pppoemtu=`nvram get linux wan_pppoe_mtu`
+	if [ -n "$pppoemtu" ]; then
+		uci set network.wan.mtu=$((pppoemtu+8))
+	fi
+	mac_clone_en=`nvram get linux mac_clone_en`
+	if [ $mac_clone_en == 1 ]; then
+		uci set network.wan.enable_advance=1
+		clonemac=`nvram get linux cl0macaddr`
+		if [ $clonemac != $wanmac ]; then
+			uci set network.wan.macoperate=2
+			uci set network.wan.mac_addr=$clonemac
+			uci set network.wan.ignore=0
+		fi
+	fi
+	dnsen=`nvram get linux wan_dnsmanual`
+	if [ $dnsen == 1 ]; then
+		uci set network.wan.enable_advance=1
+		firstdns=`nvram get linux wan_primary_dns`
+		uci set network.wan.dns1=$firstdns
+		seconddns=`nvram get linux wan_secondary_dns`
+		if [ -n $seconddns ]; then
+			uci set network.wan.dns2=$seconddns
+			dnsvalue=$firstdns" "$seconddns
+		else
+			dnsvalue=$firstdns
+		fi
+		uci set network.wan.dns="$dnsvalue"
+		uci set network.wan.peerdns=0
+		uci set network.wan.dns_opt=1
+	else
+		uci set network.wan.peerdns=1
+	fi
+	uci commit network
+fi

@@ -1,0 +1,8 @@
+/usr/lib/lua/luci/controller/admin/UPnP.lua
+/etc/nvram2uci/UPnP
+/etc/uci-defaults/luci-upnp
+/usr/lib/lua/luci/i18n/UPnP.zh-cn.lmo
+/usr/lib/lua/luci/model/cbi/Upnp_config.lua
+/etc/init.d/upnp
+/etc/hotplug.d/iface/72-UPnP
+/etc/config/UPnP

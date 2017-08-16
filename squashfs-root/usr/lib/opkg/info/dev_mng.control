@@ -1,0 +1,9 @@
+Package: dev_mng
+Version: 1
+Depends: libc, libubox, libuci, libjson-c
+Source: package/phicomm/dev_mng
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 15672
+Description:  1.设备信息公用模块管理daemon，实时跟内核进行用户上下线时的通信，产生hotplug事件，执行/etc/hotplug.d/ip_event/目录下的脚本
+ 2.实时更新设备在线信息到/var/state/base_device文件中

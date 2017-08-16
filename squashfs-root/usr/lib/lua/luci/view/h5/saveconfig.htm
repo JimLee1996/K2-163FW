@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>      
+    <%+title%>
+</head>
+<body>
+    <div class="setcontent">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="title-underline"></div>
+        <div class="margintop-20">
+            <div class="msg2"><img src ="<%=media%>/images/load_gray.gif" /></div>
+        
+        <% if "autodetect" == trigefrom then %>
+            <div class="msg1">上网方式检测中,请稍候....</div>
+        <% elseif "internetconfig" == trigefrom then %>
+            <div class="msg1">上网配置生效中,请稍候....</div>
+        <% else%>
+            <div class="msg1">配置生效中,请稍候....</div>
+        <% end %>
+        </div>    
+    </div>
+</body>
+<script>
+    <% if "autodetect" == trigefrom then %>
+    var timer1 = 0;
+    var counter = 0;
+    timer1=setInterval("timeoutfunc()",2000);
+    function timeoutfunc(){
+        counter=counter+1;
+        if(counter>=5){
+            clearInterval(timer1);
+            gotinternetset()
+        } else {
+            $.ajax({
+            type:"post",
+            url:"LocalCheckDetectFinish.asp?action=get",
+            success:function(s)
+            {
+              if(s.detectval)
+              {
+                  clearInterval(timer1);
+                  gotinternetset()
+              }
+            }
+            }
+            );
+        }
+    }
+    function gotinternetset()
+    {
+        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "internetset_autodetect")%>";
+    }
+    <% elseif "internetconfig" == trigefrom then %>
+    function internetok()
+    {
+        XHR.get('<%=luci.dispatcher.build_url("admin", "h5", "sohoping")%>',null,
+            function(x,s){
+                if(s)
+                {
+                    if(s[0].internetok == "success")
+                    {
+                        window.location.href="http://app.phiwifi.phicomm.com/Service/App/downloadpage/chanel/1H5W";
+                    }
+                    else if(s[0].internetok == "fail")
+                    {
+                        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "internetcheck")%>";
+                    }
+                }
+                else
+                {
+                    setTimeout("internetok()", 5000);
+                }
+            }
+        );    
+    }
+    setTimeout("internetok()", 30000);
+    <% end %>
+</script>
+</html>

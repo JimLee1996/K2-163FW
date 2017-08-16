@@ -1,0 +1,361 @@
+<%#
+    Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+
+    DISCREPTION   : LuCI - Lua Configuration Interface - quick guide support
+    AUTHOR        :     xiangjun.fu <    xiangjun.fu@phicomm.com.cn>
+    CREATED DATE  : 2016-05-05
+    MODIFIED DATE : 
+-%>
+
+<!DOCTYPE html>
+<html>
+<% 
+local uci_t = luci.model.uci.cursor()
+require "luci.phicommproduct"
+local sys = require "luci.sys"
+local ssid = nil
+local key = nil
+local inic_ssid = nil
+local inic_key = nil
+
+uci_t:foreach("wireless", "wifi-iface",
+    function(s)
+        if s.ifname == "ra0" then
+            if s.ssid then
+                ssid = s.ssid
+            end
+        end
+        if s.ifname == "ra0" then
+            if s.key then
+                key = s.key
+            end
+        end
+
+        if s.ifname == "rai0" then
+            if s.ssid then
+                inic_ssid = s.ssid
+            end
+        end
+   
+        if s.ifname == "rai0" then
+            if s.key then
+                inic_key = s.key
+            end
+        end
+    end)
+   
+%>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no"/> 
+    <%+title%>
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/icon_fonts_style.css">
+    <link rel="stylesheet" href="<%=media%>/css/guide.css">
+    <script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/guide.js"></script>
+    <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/base64Encode.js"></script>
+    <script type="text/javascript">
+        var pwd_empty = false;
+        $(function(){
+            $("#confirm_bt").click(function(){
+                $("#ProofModal").modal("hide");
+                if(pwd_empty==true){
+                    pwd_empty == false;
+                    $("#admin_pwd").val(base64encode(utf16to8($("#admin_pwd").val())));
+                    document.wireless_setting.submit();
+                }
+            })
+        })
+    </script>
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="<%=media%>/js/html5shiv.js"></script>
+  <script src="<%=media%>/js/respond.min.js"></script>
+  <![endif]-->  
+    <% include("themes/" .. theme .. "/multlangjs") %>
+	<% include("themes/" .. theme .. "/detect") %>
+</head>
+<body class="content_body" oncontextmenu=self.event.returnValue=false>
+<div class="guide_logo">
+            <img src="<%=media%>/images/logo_guide.png"/>
+            <span>快速向导</span>
+    </div>
+    <div class="guide_top_right">
+    </div>
+<form method="post" name="wireless_setting" action="<%=REQUEST_URI%>">
+        <div class="guide_center_div">
+            <input name="savevalidate" value="" type="hidden">
+            <input name="username" value="<%=uci_t:get("system","weblogin","username")%>" type="hidden">
+            <div class="guide_content_div">
+                <div class="titleDiv ">
+                    <span class="titleSpan guide_title_span"><%:phicomm wifiset%></span>
+                </div>
+                <div class="guide_title_hr"></div>
+                <table class="guide_table">
+                    <tr>
+                        <td  class="guide_table_td_1">
+                            <span ><%:qckgd_24g_ssid%></span>
+                        </td>
+                        <td  class="guide_table_td_2">
+                            <input name="ssid" id="ssid" value="<%=ssid%>"></input>
+                            
+                        </td>
+                        <td  class="guide_table_td_3">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td  class="guide_table_td_1">
+                            <span ><%:qckgd_24g_pwd%></span>
+                        </td>
+                        <td  class="guide_table_td_2">
+                            <input type="password" name="key" id="key" value="<%=key%>"></input>
+                        </td>
+                        <td  class="guide_table_td_3">
+                            <img class="icon_eye" src="<%=media%>/images/icon_visible_off.png" onclick='hide_show_passwd(this,$(this).parents("td").prev("td").find("input"))'>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td  class="guide_table_td_1">
+                            <span ><%:qckgd_5g_ssid%></span>
+                        </td>
+                        <td  class="guide_table_td_2">
+                            <input name="inic_ssid" id="inic_ssid" value="<%=inic_ssid%>"></input>
+                        </td>
+                        <td  class="guide_table_td_3">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td  class="guide_table_td_1">
+                            <span ><%:qckgd_5g_pwd%></span>
+                        </td>
+                        <td  class="guide_table_td_2">
+                            <input type="password" name="inic_key" id="inic_key" value="<%=inic_key%>"></input>
+                        </td>
+                        <td  class="guide_table_td_3">
+                            <img class="icon_eye" src="<%=media%>/images/icon_visible_off.png" onclick='hide_show_passwd(this,$(this).parents("td").prev("td").find("input"))'>
+                        </td>
+                    </tr>
+                    <tr id="userpwd_tr">
+                        <td  class="guide_table_td_1">
+                            <span ><%:qckgd_admin_pwd%></span>
+                        </td>
+                        <td  class="guide_table_td_2">
+                            <input type="password" name="password" id="admin_pwd" value=""></input>
+                        </td>
+                        <td  class="guide_table_td_3">
+                            <img class="icon_eye" src="<%=media%>/images/icon_visible_off.png" onclick='hide_show_passwd(this,$(this).parents("td").prev("td").find("input"))'>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td  class="guide_table_td_1">
+                        </td>
+                        <td colspan="2" class="guide_table_td_2 userpwdCheckbox">
+                            <img src="<%=media%>/images/icon_checkbox_off.png" class="imgCheckBox img_change" id="pwd" value="0">
+                            <span style="color:#F08300; font-size:12px;"><%:qckgd_sync_adminpwd_24gpwd%></span>
+                        </td>
+                    </tr>
+                </table>
+                <div class="guide_bt_div">
+                 <button type="button" class="guide_button" style="height: 31px;width: 122px;" onclick="next_page()"><%:qckgd_save%>
+                            </button>
+                </div>
+                <div style="text-align: right; width: 90%;">
+                <a id="prev_a" style="font-size: 14px; color: #F08300; text-decoration:underline" href=<%=luci.dispatcher.build_url("admin", "quickguide","internet_setting")%>><%:qckgd_pre_step%></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% if 1 == showprocess then %>
+    <button style="display:none" type="button" data-toggle="modal" data-target="#myModal" id="b_aaa"></button>
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="progress_modal_dialog" role="document">
+            <div class="progress_modal_content modal-content">
+                <button type="button" id="close_progress_button" class="close" data-dismiss="modal" style="opacity: 0;"></button>
+                <div class="progress_modal_content_title">
+                    <span id="configstatus_up"><%:qckgd_config_applying%></span>
+                    <div class="progress_div">
+                        <div class="progress_bar_div" id="progress_bar" w="476" style="width:0px;">
+                            <div class="progress_bar_circle_div"></div>
+                        </div>
+                    </div>
+                    <div class="progress_msg_div">
+                        <span id="configstatus_down"><%:qckgd_network_applying%></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% end %>
+    <button type="button" style="display:none" data-toggle="modal" data-target="#ProofModal" id="paramcheck"></button>
+    <div class="modal fade" id="ProofModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="proof_modal_dialog" role="document">
+            <div class="modal-content proof_modal_content">
+                <div class="proof_msg_div">
+                <span id="error_des"></span>
+                <span id="error_des2" style="display:block"></span>
+                </div>
+                <div class="proof_button_div">
+                    <div class="btn proof_confirm_button"  data-dismiss="modal" id="confirm_bt">
+                        <span class="proof_button_span" ><%:qckgd_confirm%></span>
+                    </div>
+                    <div class="btn proof_confirm_button"  data-dismiss="modal" id="cancel_bt" style="background: #666666;margin-left:20px;display:none">
+                        <span class="proof_button_span">取消</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+    <div class="guide_bottom_left">
+    </div>
+    <div class="guide_fotter">
+            <span class="hotline_span"><%:phicomm license%></span>
+            <span class="mac_span"><%:MAC Address%>：<%=uci_t:get("network","wan","macaddr")%></span>
+            <span class="software_version_span"><%:software version%>：<%=pcdata(luci.phicommproduct.softversion)%></span>
+    </div>
+</body>
+<script type="text/javascript">
+    function Pwd_empty(){
+        pwd_empty = true;
+        $("#paramcheck").click();
+        $("#error_des").html("2.4G或5G无线密码为空将会影响网络安全");
+        $("#error_des2").html("是否确认保存？");
+        $("#cancel_bt").show();
+    }
+    function next_page()
+    {
+        pwd_empty = false;
+        document.wireless_setting.savevalidate.value = 1;
+        var pwdstatus = $("#pwd").attr("value");
+        document.wireless_setting.cbi_validators = null;
+        if(pwdstatus == "1")
+        {
+            document.wireless_setting.password.value = document.wireless_setting.key.value;
+        }
+        cbi_validate_field('ssid', false, 'and(sperangelength(1,32),checkWirelessspechar)', '<%:qckgd_24g_ssid%>', error_msg);
+        cbi_validate_field('key', true, 'and(wpakey,checkWirelessspechar)', '<%:qckgd_24g_pwd%>', error_msg);
+        cbi_validate_field('inic_ssid', false, 'and(sperangelength(1,32),checkWirelessspechar)', '<%:qckgd_5g_ssid%>', error_msg);
+        cbi_validate_field('inic_key', true, 'and(wpakey,checkWirelessspechar)', '<%:qckgd_5g_pwd%>', error_msg);
+        cbi_validate_field('admin_pwd', false, 'and(wpakey_minlen_5,checkWirelessspechar)', '<%:qckgd_admin_pwd%>', error_msg);
+        if(!cbi_validate_form(document.wireless_setting, null,showerror))
+        {
+            return false;
+        }
+        
+        if(0 == $("#key").val().length || 0 == $("#inic_key").val().length)
+        {
+            Pwd_empty();
+        }
+        else
+        {
+            $("#admin_pwd").val(base64encode(utf16to8($("#admin_pwd").val())));
+            document.wireless_setting.submit();
+        }
+    }
+    $("#pwd").click(function(){
+         var str_value= $(this).attr("value");
+        if(str_value == 0){
+            $("#userpwd_tr").hide();
+            $(this).attr("value","1");
+        }else{
+            $("#userpwd_tr").show();
+            $(this).attr("value","0");
+        }
+    });
+    
+    function sync2gssidto5gssid()
+    {
+        $("#inic_ssid").val($("#ssid").val());
+    }
+    
+    function sync2gkeyto5gkey()
+    {
+        if($("#ssid").val() == $("#inic_ssid").val())
+        {
+            $("#inic_key").val($("#key").val());
+        }
+    }
+    
+    <% if 1 == showprocess then %>
+    var str = 0;
+    var time1 = 0;
+    var connectfail = 0;
+    var infochange = 0;
+
+    function save()
+    {
+        document.wireless_setting.submit();
+    }
+    
+    function wan_link_judge()
+    {
+        $.ajax({
+            type:"post",
+            url:"/LocalCheckWanStatus.asp?action=get",
+            success:function(s){
+                if(s)
+                {
+                    $("#close_progress_button").click();
+                    save();
+                }
+                else
+                {
+                    if(connectfail >= 5 && 0 == infochange)
+                    {
+                        $("#configstatus_down").html("<%:qckgd_connect_fail_down%>");
+                        $("#configstatus_up").html("<%:qckgd_connect_fail_up%>");
+                        infochange = 1;
+                    }
+                    else
+                    {
+                        connectfail = connectfail + 1;
+                    }
+                    setTimeout("wan_link_judge()", 2000);
+                }
+            },
+			error:function(s){
+					if(connectfail >= 5 && 0 == infochange)
+                    {
+                        $("#configstatus_down").html("<%:qckgd_connect_fail_down%>");
+                        $("#configstatus_up").html("<%:qckgd_connect_fail_up%>");
+                        infochange = 1;
+                    }
+                    else
+                    {
+                        connectfail = connectfail + 1;
+                    }
+                    setTimeout("wan_link_judge()", 2000);
+				  }
+        }
+        );    
+    }
+    
+    function myModalhide(){
+        document.wireless_setting.savevalidate.value = 2;
+        wan_link_judge();
+    }
+    function processstatus(secs){
+        $("#b_aaa").click();
+        $("#progress_bar").animate({width:$("#progress_bar").attr("w")+"px"},secs*1000,function(){
+         lanDetecting(myModalhide);
+        });
+    }
+    processstatus(35);
+    <% end %>
+    function showerror(errmsg)
+    {
+        $("#error_des").html(errmsg);
+        $("#error_des2").html("");
+        $("#cancel_bt").hide();
+        $("#paramcheck").click();
+    }
+</script>
+
+</html>
+

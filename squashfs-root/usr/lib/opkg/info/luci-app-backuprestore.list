@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/view/backuprestore.htm
+/usr/lib/lua/luci/controller/admin/backuprestore.lua
+/usr/lib/lua/luci/i18n/backup.zh-cn.lmo

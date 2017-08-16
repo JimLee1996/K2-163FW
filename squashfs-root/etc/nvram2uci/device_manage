@@ -1,0 +1,33 @@
+#!/bin/sh
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+for i in $( seq 0 49 ); do
+	local deviceName mac ip internet_enable dRate uRate
+	local profile
+	profile=`nvram get linux limit$i 2>/dev/null`
+	if [ -z $profile ]; then
+		continue
+	fi
+	uRate=0
+	json_load $profile
+	json_get_var deviceName deviceName 
+	json_get_var mac mac
+	json_get_var ip ip
+	json_get_var internet_enable internet_enable
+	json_get_var dRate dRate
+	
+	local section_name=${mac//":"/"_"}
+	uci set device_manage.$section_name=limit && \
+	uci set device_manage.$section_name.mac=$mac && \
+	uci set device_manage.$section_name.deviceName=$deviceName && \
+	uci set device_manage.$section_name.ip=$ip && \
+	uci set device_manage.$section_name.internet_enable=$internet_enable && \
+	uci set device_manage.$section_name.dRate=$dRate && \
+	uci set device_manage.$section_name.uRate=$uRate && \
+	uci commit device_manage || uci delete device_manage.$section_name
+
+	uci set common_host.$section_name=host && \
+	uci set common_host.$section_name.hostname=$deviceName && \
+	uci commit common_host || uci delete common_host.$section_name
+done

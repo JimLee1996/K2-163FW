@@ -1,0 +1,88 @@
+#!/bin/sh
+. /lib/functions/nvram2uci.sh
+####################
+#2.4G 
+####################
+echo "==>start to check wlextend nvram."
+dev2gflag='band=2.4G'
+dev2g=`uci show wireless | grep ${dev2gflag}`
+dev2g=${dev2g#*.}
+dev2g=${dev2g%%.*}
+
+iface0='ifname=ra0'
+iface0=`uci show wireless | grep ${iface0}`
+iface0=${iface0#*.}
+iface0=${iface0%%.*}
+echo "iface : ${iface0}"
+enable2=`nvram get linux ApCliEnable`
+if [ $enable2 = "1" ]
+then
+	nvram2uci ApCliSsid wireless.${iface0}.ApCliSsid
+	nvram2uci ApCliBssid wireless.${iface0}.ApCliBssid
+	nvram2uci ApCliEncrypType wireless.${iface0}.ApCliEncrypType
+	channel_apcli=`nvram get linux ApCliChannel`
+	if [ "x${channel_apcli}" != "x" ]
+	then
+		uci set wireless.${iface0}.ApCliChannel=${channel_apcli}
+		uci set wireless.${dev2g}.channel=${channel_apcli}
+	fi
+	authmode=`nvram get linux ApCliAuthMode`
+	uci set wireless.${iface0}.ApCliAuthMode=$authmode
+	if [ $authmode = "WEP" -o $authmode = "WEPAuto" ]
+	then
+		defaultkeyid=`nvram get linux ApCliDefaultKeyID`
+		uci set wireless.${iface0}.ApCliDefaultKeyID=${defaultkeyid}
+		nvram2uci ApCliKey${defaultkeyid}Type wireless.${iface0}.ApCliKey${defaultkeyid}Type
+		nvram2uci ApCliKey${defaultkeyid}Str wireless.${iface0}.ApCliKey${defaultkeyid}Str
+	elif [ $authmode = "WPAPSK" -o $authmode = "WPA2PSK" ]
+	then
+		nvram2uci ApCliWPAPSK wireless.${iface0}.ApCliWPAPSK
+	fi
+	uci set network.wan.ifname="apcli0"
+fi
+uci set wireless.${iface0}.ApCliEnable=$enable2
+uci commit
+
+####################
+#5G 
+####################
+dev5gflag='band=5G'
+dev5g=`uci show wireless | grep ${dev5gflag}`
+dev5g=${dev5g#*.}
+dev5g=${dev5g%%.*}
+
+iface0='ifname=rai0'
+iface0=`uci show wireless | grep ${iface0}`
+iface0=${iface0#*.}
+iface0=${iface0%%.*}
+echo "iface : ${iface0}"
+enable2=`nvram get linux inic_ApCliEnable`
+if [ $enable2 = "1" ]
+then
+	uci set network.wan.ifname="apclii0"
+	nvram2uci inic_ApCliSsid wireless.${iface0}.ApCliSsid
+	nvram2uci inic_ApCliBssid wireless.${iface0}.ApCliBssid
+	channel_apcli=`nvram get linux inic_ApCliChannel`
+	if [ "x${channel_apcli}" != "x" ]
+	then
+		uci set wireless.${iface0}.ApCliChannel=${channel_apcli}
+		uci set wireless.${dev5g}.channel=${channel_apcli}
+	fi
+	nvram2uci inic_ApCliEncrypType wireless.${iface0}.ApCliEncrypType
+	authmode=`nvram get linux inic_ApCliAuthMode`
+	uci set wireless.${iface0}.ApCliAuthMode=$authmode
+	if [ $authmode = "WEP" -o $authmode = "WEPAuto" ]
+	then
+		defaultkeyid=`nvram get linux inic_ApCliDefaultKeyID`
+		uci set wireless.${iface0}.ApCliDefaultKeyID=${defaultkeyid}
+		nvram2uci inic_ApCliKey${defaultkeyid}Type wireless.${iface0}.ApCliKey${defaultkeyid}Type
+		nvram2uci inic_ApCliKey${defaultkeyid}Str wireless.${iface0}.ApCliKey${defaultkeyid}Str
+	elif [ $authmode = "WPAPSK" -o $authmode = "WPA2PSK" ]
+	then
+		nvram2uci inic_ApCliWPAPSK wireless.${iface0}.ApCliWPAPSK
+	fi
+	uci set network.wan.ifname="apclii0"
+fi
+uci set wireless.${iface0}.ApCliEnable=$enable2
+uci commit
+echo "<==end of checking wlextend nvram."

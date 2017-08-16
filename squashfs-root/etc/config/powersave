@@ -1,0 +1,2 @@
+config power 'powersave'
+	option enable '0'

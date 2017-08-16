@@ -1,0 +1,46 @@
+<%+header%>
+
+<%
+	local uci = require("luci.model.uci").cursor()
+%>
+
+<script>
+	var switch_flag;
+	$(function(){
+		switch_flag = 0;
+		$("#change_switch").click(function(){
+			var str_img = $("#change_switch").attr("src");
+			if(switch_flag == 0){
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#change_switch").attr("src","<%=media%>/images/switch_on.png");
+					$("#img_val").val("1");
+				}else{
+					$("#change_switch").attr("src","<%=media%>/images/switch_off.png");
+					$("#img_val").val("0");
+				}
+				$("form[name='indicatorlight']").submit();			
+				switch_flag = 1;
+			}
+		});				
+	});
+</script>
+
+<!-- indicatorLight -->
+<div class="setcontent advanced" id="indilight">
+	<div class="title-span"><span ><%:indicatorlight%></span></div>
+	<div class="title-underline"></div>
+	<div class="setlinediv margintop-30">
+		<span class="link-span"><%:indicatorlight status switch%></span>
+		<span class="switchspan">		
+			<img class="img-Switch" id= "change_switch" <% if uci:get("light_manage", "pagelight", "ignore") == "1" then %> src="<%=media%>/images/switch_on.png" <% else %> src="<%=media%>/images/switch_off.png" <% end %> />	
+		</span>	
+	</div>
+	<form name="indicatorlight" id="indicatorlight" action="<%=REQUEST_URI%>/switch" method="POST">
+		<input type="hidden" name="button_change" id="img_val" value="">
+	</form>	
+    <div class="setlinediv">
+        <span class="explain-span1">
+        <%:annotation%><p><%:indicatorlight help%></p></span>
+    </div>
+</div><!-- end indicatorLight -->
+<%+footer%>

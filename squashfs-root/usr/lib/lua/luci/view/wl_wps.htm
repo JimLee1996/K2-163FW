@@ -1,0 +1,188 @@
+<%+header%>
+<%
+    require("luci.sys")
+    require("luci.config")
+    local uci = require("luci.model.uci")
+    local cur = uci.cursor()
+    local phicomm_lua = require "phic"
+    local wps_enable = cur:get("wps_config","wps_para", "wps_enable")
+    local wifi_2g_disable = phicomm_lua.get_wifi_iface_config("ra0","disabled")
+    local wifi_5g_disable = phicomm_lua.get_wifi_iface_config("rai0","disabled")
+    local hidemain_2g_ssid = phicomm_lua.get_wifi_iface_config("ra0","hidden")
+    local hidemain_5g_ssid = phicomm_lua.get_wifi_iface_config("rai0","hidden")
+%>
+<script>
+	var wifi_2g_disable = <%=wifi_2g_disable[1]%>;
+	var wifi_5g_disable = <%=wifi_5g_disable[1]%>;
+	var hidemain_2g_ssid = <%=hidemain_2g_ssid[1]%>;
+	var hidemain_5g_ssid = <%=hidemain_5g_ssid[1]%>;
+	var switch_flag;
+
+	function initRadio(){
+		if(wifi_2g_disable == 0 && wifi_5g_disable==0){
+			if(hidemain_2g_ssid == 1)
+			{
+				$("span[name=pin_5g]").prev("img").attr("src","<%=media%>/images/icon_radio_on.png");
+				$("input[name=pbc_freq]").val(1);
+			}
+			else
+			{
+				$("span[name=pin_2g]").prev("img").attr("src","<%=media%>/images/icon_radio_on.png");
+				$("input[name=pbc_freq]").val(0);
+			}
+		}else{
+			if(wifi_2g_disable == 0){
+				$("span[name=pin_2g]").prev("img").attr("src","<%=media%>/images/icon_radio_on.png");
+				$("input[name=pbc_freq]").val(0);
+			}
+			if(wifi_5g_disable == 0){
+				$("span[name=pin_5g]").prev("img").attr("src","<%=media%>/images/icon_radio_on.png");
+				$("input[name=pbc_freq]").val(1);
+			}
+		}
+	}
+
+	$(function(){
+		switch_flag = 0;
+		initRadio();
+
+		$(".img-Switch").click(function(){	
+			var str_img = $(this).attr("src");
+			if(switch_flag == 0){
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$(this).attr("src","<%=media%>/images/switch_on.png");
+					$("#wps_enable").val(1);
+					$(".contentDisplay").show();
+					if((wifi_2g_disable == 1)&&(wifi_5g_disable == 1))
+					{
+						wps_refresh = true;
+						Alert("关闭无线网络，WPS将无法使用！");
+						return;
+					}
+					else if((wifi_2g_disable == 1)&&(hidemain_5g_ssid == 1))
+					{
+						$("#myModal1").modal("show");
+					}
+					else if((wifi_5g_disable == 1)&&(hidemain_2g_ssid == 1))
+					{
+						$("#myModal1").modal("show");
+					}
+					else if((hidemain_2g_ssid == 1)&&(hidemain_5g_ssid == 1))
+					{
+						$("#myModal1").modal("show");
+					}
+					else
+					{	
+						$("#wps_config").submit();
+					}
+				}else{
+					$(this).attr("src","<%=media%>/images/switch_off.png");	
+					$("#wps_enable").val(0);
+					$(".contentDisplay").hide();
+					$("#wps_config").submit();
+				}
+				switch_flag = 1;				
+			}
+		});
+
+		 $("#manualcomfire").click(function(){
+			$("#wps_enable_hidessid").submit();
+		});
+
+		$("#modal-cancel-btn").click(function(){
+			window.location.reload();
+		});	
+
+		$(".radioSwitch").click(function(){	
+			var radio_name = $(this).attr("name");
+			var radio_val = $(this).attr("value");
+			if(radio_val == 0){
+				if((wifi_2g_disable==0)&&(hidemain_2g_ssid==0))
+				{
+					$("img[name='"+radio_name+"']").attr("src","<%=media%>/images/icon_radio_off.png");
+					$(this).attr("src","<%=media%>/images/icon_radio_on.png");
+					$("input[name='"+radio_name+"']").val(radio_val);
+				}
+			}else{
+				if((wifi_5g_disable==0)&&(hidemain_5g_ssid==0))
+				{
+					$("img[name='"+radio_name+"']").attr("src","<%=media%>/images/icon_radio_off.png");
+					$(this).attr("src","<%=media%>/images/icon_radio_on.png");
+					$("input[name='"+radio_name+"']").val(radio_val);
+				}
+			}
+		});
+		
+		$(".connect-btn").click(function(){
+			$("#wan_check_modal").find(".loading_msg_span").html("连接中...");
+			$("#wan_check_modal").modal("show");
+			setTimeout(function(){$("#wps_pbc").submit()},1000);
+		});
+	});
+
+</script>
+	<!-- wpsSet -->
+	<div class="setcontent advanced">
+		<div class="title-span"><span >WPS设置</span></div>
+		<div class="title-underline"></div>
+		<div class="setlinediv margintop-30">
+			<span class="link-span">WPS设置：</span>
+			<span class="switchspan">
+				<%
+					if wps_enable == "1" then
+				%>
+					<img class="img-Switch" src="<%=media%>/images/switch_on.png" />
+				<% else %>
+					<img class="img-Switch" src="<%=media%>/images/switch_off.png" />
+				<% end %>
+			</span>	
+			<form id="wps_config" action="<%=REQUEST_URI%>/wps_enable" method="post">
+				<input name="wps_enable" id="wps_enable" type="hidden" />
+			</form>	
+			<a href="#" title="WPS功能可以通过按键配对方式，快速进行设备间的无线连接">
+				<div class="iconhelpdiv">
+					<span class="icon-help color-orange"></span>					
+				</div>	
+			</a>
+		</div>
+		<%if wps_enable=="1" then%>
+			<div class="contentDisplay">
+				<div class="setlinediv">
+					<span class="link-span3">WPS PBC设置：</span>
+					<div class="radiodiv">
+						<img class="radioSwitch setval" name="pbc_freq" src="<%=media%>/images/icon_radio_off.png" value="0" />
+						<span name="pin_2g">2.4G</span>
+					</div>
+					<div class="radiodiv">
+						<img class="radioSwitch setval" name="pbc_freq" src="<%=media%>/images/icon_radio_off.png" value="1" />
+						<span name="pin_5g">5G</span>
+					</div>												
+					<form id="wps_pbc" action="<%=REQUEST_URI%>/wps_pbcconnect" method="post">
+						<input type="hidden" name="pbc_freq" value="0" />
+					</form>
+				</div>			
+				<div class="setlinediv margintop-30" style="margin-bottom: 30px;">
+					<div class="button-square-lg connect-btn btndiv" value="pbc">连 接</div>
+				</div>
+			</div>
+		<%end%>
+	</div><!--end wpsSet-->
+<!--modal-->
+<div class="modal fade" id="myModal1">
+	<div class="modal-dialog alert_dialog">
+		<div class="modal-content alert_content">
+			<div class="color-gray">
+				<span>启动WPS将开启SSID广播，是否继续设置？</span>
+				<button type="button" class="button-square-sm" data-dismiss="modal" id="manualcomfire"><close><%:lanset_confirm%></close></button>
+				<button type="button" class="button-square-sm" data-dismiss="modal" id="modal-cancel-btn"><%:lanset cancle%></button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<form id="wps_enable_hidessid" action="<%=REQUEST_URI%>/wps_enable_hidenssid" method="post">
+	<input name="hidemain_2g_ssid" type="hidden" value="<%=hidemain_2g_ssid[1]%>"></input>
+	<input name="hidemain_5g_ssid" type="hidden" value="<%=hidemain_5g_ssid[1]%>"></input>
+	<input name="wifi_2g_disable" type="hidden" value="<%=wifi_2g_disable[1]%>"></input>
+	<input name="wifi_5g_disable" type="hidden" value="<%=wifi_5g_disable[1]%>"></input>
+</form>
+<%+footer%>

@@ -1,0 +1,8 @@
+Package: librth
+Version: 1
+Depends: libc, libubox, libuci, libpthread, phicomm_libs, libubus, jshn
+Source: package/phicomm/router-helper
+Section: libs
+Architecture: ramips_24kec
+Installed-Size: 2867
+Description:  librth

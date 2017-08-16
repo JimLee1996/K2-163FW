@@ -1,0 +1,49 @@
+#!/bin/sh
+. /lib/functions/nvram2uci.sh
+
+up_type=`nvram get linux up_type`
+up_time=`nvram get linux up_time`
+rand_num=$(($(date +%s)%59))
+
+case "$up_time" in
+    0)
+       up_time_uci="00:00-01:00"
+       break;;
+    1)
+       up_time_uci="01:00-02:00"
+       break;;
+    2)
+       up_time_uci="02:00-03:00"
+       break;;
+    3)
+       up_time_uci="03:00-04:00"
+       break;;
+    4)
+       up_time_uci="04:00-05:00"
+       break;;
+    5)
+       up_time_uci="05:00-06:00"
+       break;;
+    *)
+       up_time_uci="02:00-03:00"
+       up_type="1"
+       break;;
+esac
+
+if [ $up_type = "1" ];then
+    uci set system.autoupgrade.up_type=0
+    uci set system.autoupgrade.up_time=$up_time_uci
+    uci commit system
+    sed "/auto_upgrade.sh/d" /etc/crontabs/root > /tmp/autoupgrade_time
+    sed "1 i $rand_num $up_time * * * /lib/auto_upgrade.sh" /tmp/autoupgrade_time > /etc/crontabs/root
+    /etc/init.d/cron restart
+    rm /tmp/autoupgrade_time
+else
+    uci set system.autoupgrade.up_type=1
+    uci set system.autoupgrade.up_time=$up_time_uci
+    uci commit system
+    sed "/auto_upgrade.sh/d" /etc/crontabs/root > /tmp/autoupgrade_time
+    crontab /tmp/autoupgrade_time
+    /etc/init.d/cron restart
+    rm /tmp/autoupgrade_time
+fi

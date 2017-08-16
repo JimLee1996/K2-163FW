@@ -1,0 +1,177 @@
+<%+header%>
+<% local uci_t = require "luci.model.uci".cursor() %>
+<%
+local lanip = uci_t:get("network", "lan", "ipaddr")
+local nm = uci_t:get("network", "lan", "netmask")
+local remote_enable = uci_t:get("remote", "remote", "remote_enable")
+local remote_port = uci_t:get("remote", "remote", "remote_port")
+local remote_ip = uci_t:get("remote", "remote", "remote_ip")
+%>
+<script type="text/javascript" src="<%=media%>/js/advanced.js"></script>
+
+<script type="text/javascript">
+
+	function checkport(remoteport)
+	{
+		if(remoteport.length == 0)
+		{
+			Alert("<%:remote_port%><%:multlangjs_null%>");
+			return false;
+		}
+		if(remoteport.match(/^-?[0-9]+$/) == null)
+		{
+			Alert("<%:remote_port%><%:multlangjs_invalid%>");
+			return false;
+		}
+		var port = parseInt(remoteport);
+		if(port < 1 || port > 65535)
+		{
+			Alert("<%:remoteport should be in 1-65535%>");
+			return false;
+		}
+		return true;
+	}
+
+	function checkip(serverip)
+	{
+		if(serverip == "255.255.255.255")
+		{
+			return true;
+		}
+		if(serverip.length == 0)
+		{
+			Alert("<%:allowed_ip%><%:multlangjs_null%>");
+			return false;
+		}
+		var ip= /^([1-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(([0-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){2}([1-9]|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$/;
+		if(ip.exec(serverip) == null)
+		{
+			Alert("<%:allowed_ip%><%:multlangjs_invalid%>");
+			return false;
+		}
+		var ipaddr = serverip.split(".");
+		if(ipaddr.length != 4)
+		{
+			Alert("<%:allowed_ip%><%:multlangjs_invalid%>");
+			return false;
+		}
+		for(i = 0; i < 4; i++)
+		{
+			if(ipaddr[i] == "")
+			{
+				Alert("<%:allowed_ip%><%:multlangjs_invalid%>");
+				return false;
+			}
+		}
+		if(parseInt(ipaddr[0]) == 127 || ( parseInt(ipaddr[0])>223 && parseInt(ipaddr[0])<240))
+		{
+			Alert("<%:allowed_ip%><%:multlangjs_invalid%>");
+			return false;
+		}
+		if(parseInt(ipaddr[0]) >0 && parseInt(ipaddr[0]) <255 && parseInt(ipaddr[1])>=0 && parseInt(ipaddr[1])<=255 && parseInt(ipaddr[2])>=0 && parseInt(ipaddr[2])<=255 && parseInt(ipaddr[3])>0 && parseInt(ipaddr[3])<255)
+		{
+			var lan_ip = "<%=lanip%>";
+			var nm = "<%=nm%>";
+			var net1, net2;
+			net1 = get_network_id(serverip,nm);
+			net2 = get_network_id(lan_ip, nm);
+			if(net1[0] == net2[0])
+			{
+				Alert("<%:remote ip and lanip should not be on the same segment%>");
+				return false;
+			}
+			return true;
+		}
+		else
+		{
+			Alert("<%:allowed ip address%><%:multlangjs_invalid%>");
+			return false;
+		}
+	}
+
+	$(function(){
+		$("#save_remote").click(function(){
+			var radio_switch = $("#radio_val").val();
+			var port = $("#remoteport").val();
+			var ip = $("#remoteip").val();
+			if(radio_switch == 0)
+			{
+				$("#switch").val(radio_switch);
+				$("#wan_check_modal").modal("show");
+				setTimeout(function(){$("#remote_config").submit();},1000);
+				
+			}
+			else
+			{
+				if(checkport(port) && checkip(ip))
+				{
+					var port = port.replace(/\b(0+)/gi,"");
+					XHR.get('<%=luci.dispatcher.build_url("admin","more_remotemgt","portcheck")%>' + '/' + port, null,
+						function(x, checkport)
+						{
+							if(checkport)
+							{
+								if(checkport[0].checkerror == 1)
+								{
+									Alert("<%:port conflict with portfwd%>");
+									return false;
+								}
+							}
+							else
+							{
+								$("#switch").val(radio_switch);
+								$("#remote_port").val(port);
+								$("#remote_ip").val(ip);
+								$("#wan_check_modal").modal("show");
+								setTimeout(function(){$("#remote_config").submit();},1000);
+								
+							}
+						}
+					);
+				}
+			}
+		});
+	});
+</script>
+
+<div class="setcontent advanced" id="remoteDiv">
+	<div class="title-span"><span ><%:phicomm remote management%></span></div>
+	<div class="title-underline"></div>
+	<div class="setlinediv margintop-30">
+		<span class="link-span"><%:remote management%></span>
+		<div class="radiodiv">
+			<img class="radioSwitch setval showOrHide" name="remote" <%if remote_enable == "1" then%> src="<%=media%>/images/icon_radio_on.png"<%else%> src="<%=media%>/images/icon_radio_off.png"<%end%> value="1" />
+			<span><%:enable%></span> 
+		</div>
+		<div class="radiodiv">
+			<img class="radioSwitch setval showOrHide" name="remote" <%if remote_enable == "1" then%> src="<%=media%>/images/icon_radio_off.png"<%else%> src="<%=media%>/images/icon_radio_on.png"<%end%> value="0" />
+			<span><%:disable%></span>
+		</div>		
+		<input id="radio_val" type="hidden" value="<%=remote_enable%>" />
+		<a href="#" title="<%:remote help%>">
+			<div class="iconhelpdiv">
+				<span class="icon-help color-orange"></span>
+			</div>
+		</a>		
+		<form name="remote_config" id="remote_config" action="<%=REQUEST_URI%>/set" method="post">
+			<input type="hidden" name="switch" id="switch" />
+			<input type="hidden" name="remote_port" id="remote_port" />
+			<input type="hidden" name="remote_ip" id="remote_ip" />
+		</form>
+	</div>
+	<div class="contentDisplay" <%if remote_enable == "0" then%> style="display: none;" <%end%>>
+		<div class="setlinediv">
+			<span class="link-span3"><%:remote management port%></span>
+			<input  type="text" class="input-middle" name="remoteport" value="<%=remote_port%>" id="remoteport" style="padding-left: 10px;" />
+			<span style="color: #999999;float:left; padding-left: 10px;height: 31px;line-height: 31px;"><%:default%></span>
+		</div>
+		<div class="setlinediv">
+			<span class="link-span3"><%:allowed ip address%></span>
+			<input  type="text" class="input-large" name="remoteip" value="<%=remote_ip%>" id="remoteip" style="padding-left: 10px;" />
+		</div>
+	</div>
+	<div class="setlinediv margintop-30">
+		<div type="button" id="save_remote" class="button-square-lg btndiv"><%:Save%></div>
+	</div>
+</div>
+<%+footer%>

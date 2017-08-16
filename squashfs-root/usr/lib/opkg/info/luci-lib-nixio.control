@@ -1,0 +1,9 @@
+Package: luci-lib-nixio
+Version: git-adab218-1
+Depends: libc, luci-base
+Source: package/ramips/ui/luci-phicomm
+Section: luci
+Maintainer: LuCI Development Team <luci@lists.subsignal.org>
+Architecture: ramips_24kec
+Installed-Size: 29294
+Description:  NIXIO POSIX library

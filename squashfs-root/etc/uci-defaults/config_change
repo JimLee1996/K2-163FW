@@ -1,0 +1,45 @@
+#!/bin/sh
+. /lib/functions.sh
+
+config_change() {
+	local if_type=0
+	local internet_enable
+	local block_user
+	local tx_rate
+	local rx_rate
+	local section_name="$1"
+
+	config_get internet_enable $section_name internet_enable
+	if [ -n "$internet_enable" ]; then
+		if [ $internet_enable -ne 0 ]; then
+			block_user=0
+		else
+			block_user=1
+		fi
+		uci delete $CONFIG.$section_name.internet_enable
+		uci set $CONFIG.$section_name.block_user=$block_user
+		uci set $CONFIG.$section_name.if_type=$if_type
+		uci delete $CONFIG.$section_name.deviceName
+		uci delete $CONFIG.$section_name.deviceRename
+		uci delete $CONFIG.$section_name.ip
+	fi
+
+	config_get tx_rate $section_name uRate
+	if [ -n "$tx_rate" ]; then
+		uci delete $CONFIG.$section_name.uRate
+		uci set $CONFIG.$section_name.tx_rate=$tx_rate
+	fi
+
+	config_get rx_rate $section_name dRate
+	if [ -n "$rx_rate" ]; then
+		uci delete $CONFIG.$section_name.dRate
+		uci set $CONFIG.$section_name.rx_rate=$rx_rate
+	fi
+}
+
+CONFIG="device_manage"
+config_load $CONFIG
+config_foreach config_change limit
+uci commit $CONFIG
+
+exit 0

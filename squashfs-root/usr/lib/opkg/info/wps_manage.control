@@ -1,0 +1,8 @@
+Package: wps_manage
+Version: 1.0-2
+Depends: libc, libpthread, libuci
+Source: package/phicomm/wps_manage
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 3245
+Description:  wps manage switch

@@ -1,0 +1,2 @@
+/usr/lib/lua/luci/controller/admin/timereboot.lua
+/etc/config/timereboot

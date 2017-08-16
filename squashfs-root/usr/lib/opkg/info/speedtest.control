@@ -1,0 +1,9 @@
+Package: speedtest
+Version: 1
+Depends: libc, libcurl, luaposix, resolveip
+Source: package/phicomm/speedtest
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 11077
+Description:  A tool to do the speed test, we use it to collect the user's 
+ bandwidth data.

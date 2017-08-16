@@ -1,0 +1,790 @@
+<%+header%>
+<%
+local sys = require "luci.sys"
+local history_list = sys.gethistory()
+%>
+<script>
+var history_list = <%=luci.http.write_json(history_list)%>
+function updateHisName(num,v)
+{   
+    var tbsid = "#tbs-"+num;
+    var nhref = null;
+    var frid = "#fr-"+num;
+    if(v == "device_manage")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "device_manage")%>";
+	$(tbsid).html("终端管理")
+    }
+    else if(v == "networkset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "networkset")%>";
+	$(tbsid).html("上网设置")
+    }
+    else if(v == "wifiset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "wifiset")%>";
+	$(tbsid).html("无线设置")
+    }
+    else if(v == "lanset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_wanset", "lanset")%>";
+	$(tbsid).html("LAN口设置")
+    }
+    else if(v == "dhcp")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_wanset", "dhcp")%>";
+	$(tbsid).html("DHCP服务")
+    }
+    else if(v == "more_signal")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_signal")%>";
+	$(tbsid).html("信号调节")
+    }
+    else if(v == "more_wps")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_wps")%>";
+	$(tbsid).html("WPS设置")
+    }
+    else if(v == "more_wlextend")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_wlextend")%>";
+	$(tbsid).html("无线扩展")
+    }
+    else if(v == "more_parentctl")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_parentctl")%>";
+	$(tbsid).html("家长控制")
+    }
+    else if(v == "more_safeset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_safeset")%>";
+	$(tbsid).html("安全设置")
+    }
+    else if(v == "more_remotemgt")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_remotemgt")%>";
+	$(tbsid).html("远程管理")
+    }
+    else if(v == "more_ddns")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_ddns")%>";
+	$(tbsid).html("动态DNS")
+    }
+    else if(v == "appportfwdset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_forward","appportfwdset")%>";
+	$(tbsid).html("端口转发")
+    }
+    else if(v == "DMZset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_forward","DMZset")%>";
+	$(tbsid).html("DMZ主机")
+    }
+    else if(v == "UPnPset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_forward","UPnPset")%>";
+	$(tbsid).html("UPnP设置")
+    }
+    else if(v == "indicatorlight")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_sysset","indicatorlight")%>";
+	$(tbsid).html("指示灯")
+    }else if(v == "buttonset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_sysset","buttonset")%>";
+	$(tbsid).html("按钮设置")
+    }else if(v == "APPset")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_sysset","APPset")%>";
+	$(tbsid).html("应用设置")
+    }
+    else if(v == "autoupgrade")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_sysset","autoupgrade")%>";
+	$(tbsid).html("自动升级")
+    }
+    else if(v == "manualupgrade")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_sysset","manualupgrade")%>";
+	$(tbsid).html("手动升级")
+    }
+    else if(v == "backuprecovery")
+    {
+	nhref = "<%=luci.dispatcher.build_url("admin", "more_sysset","backuprecovery")%>";
+	$(tbsid).html("备份恢复")
+    }
+
+    $(frid).attr("href",nhref);
+
+}
+</script>
+<div id="homeDiv" class="index_div">
+
+	<div class="row" >
+		<div class="col-md-1 col-xs-1"></div>
+
+		<div class="col-md-2 col-xs-2 index_img_div" >
+			<a href="<%=luci.dispatcher.build_url("admin", "device_manage")%>">
+			<img src="<%=media%>/images/icon_terminal.png" style="margin-left: -1px;">
+			<div class="bk_span_div"><span><%:phicomm terminal equipment%></span></div>
+			<div class="device_num_div"><span id = "devicenum">1</span>
+			</div>
+			</a>
+		</div>	
+
+		<div class="col-md-2 col-xs-2 wifi_col_div">
+			
+			<div class="index_center_message_div" style="border-bottom:1px dashed #666666;">
+				<span class="icon-signal signal_span"></span>
+				<span class="wifi_span">2.4G</span>
+			</div>
+			<div class="lan_text_div">
+				<div class="lan_line_div"></div>
+				<span>LAN</span>
+				<div class="lan_line_div"></div>
+			</div>
+			<div class="index_center_message_div" style="border-top:1px dashed #666666;" >
+				<span class="icon-signal signal_span"></span>
+				<span class="wifi_span">5G</span>
+			</div>
+			<div><span id = "wifitext_2" class="icon-break wifi_break_and_connect_span" style=""></span></div>
+			<div><span id = "wifitext_5" class="icon-break wifi_break_and_connect_span" style="top:-68px;"></div>
+			</span>
+		</div>	
+
+		<div class="col-md-2 col-xs-2 index_img_div">
+			<a href="<%=luci.dispatcher.build_url("admin", "more_sysstatus")%>">
+			<img src="<%=media%>/images/icon_router.png" style="margin-top: -10px;margin-bottom:10px; margin-left:-2px; ">
+			<div class="bk_span_div"><span><%:phicomm dut%></span></div>
+			</a>
+		</div>	
+
+		<div class="col-md-2 col-xs-2 speed_col_div">
+			<div class="wan_connect_msg_div">
+				<div class="index_center_message_div" style="border-bottom:1px solid #666666;height: 30px;  ">
+					<span class="icon-Mbps signal_speed_span"></span>
+					<span id = "upspeed" class="speed_span">0KB/S</span>
+				</div>
+			</div>
+
+			<div class="wan_break_msg_div">
+				<div class="wan_break_line_div"></div>
+				<span class="icon-close"></span>
+				<div class="wan_break_line_div"></div>
+			</div>
+
+			<div class="wan_connect_msg_div">
+				<div class="index_center_message_div" style="margin-top:19px;border-top:1px solid #666666;padding-top: 5px;" >
+					<span class="icon-Kbps signal_speed_span"></span>
+					<span id = "downspeed" class="speed_span">0KB/S</span>
+				</div>
+			</div>
+
+		</div>	
+		<div class="col-md-2 col-xs-2 index_img_div">
+			<a href="<%=luci.dispatcher.build_url("admin", "networkset")%>">
+			<img src="<%=media%>/images/icon_internet.png" style="margin-top:-5px; margin-bottom:5px;margin-left:-2px;">
+			<div class="bk_span_div"><span><%:phicomm internet%></span></div>
+			</a>
+		</div>	
+
+
+		<div class="col-md-1 col-xs-1"></div>
+	</div>
+
+	<div class="row index_table_title_row">
+		<div class="col-md-1 col-xs-1"></div>
+		<div class="col-md-3 col-xs-3 index_table_title_div">
+			<span><%:phicomm you need%></span>
+		</div>
+		<div class="col-md-8 col-xs-8"></div>
+	</div>
+	<table class="index_table">
+		<tr>
+			<td class="index_table_td_1">
+			</td>
+			<%if history_list[1] then%>
+			<td class="index_table_td_2 mouse_td" value="1">
+				<% if history_list[1]["stack"] == "1" then%>
+				<div class="index_thumbtack_div" id="tk-1" style="opacity:1;filter:alpha(opacity=100);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="0" style ="color:#F08300;"></span></a>
+				</div>
+				<%else%>
+				<div class="index_thumbtack_div" id="tk-1" style="opacity:0;filter:alpha(opacity=0);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1" style ="color:#777777;"></span></a>
+				</div>
+				<%end%>
+				<div>
+					<a href="#" id="fr-1">
+						<div>
+							<span class="icon-<%=history_list[1]["name"]%> index_table_td_icon_span" id="tb-1">
+								<span class="index_table_td_msg_span" id="tbs-1"></span>
+								<script>
+								    updateHisName("1","<%=history_list[1]["name"]%>");
+								</script>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-1" style="opacity:0;filter:alpha(opacity=0);">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%else%>
+			<td class="index_table_td_2 mouse_td" value="0">
+				<div class="index_thumbtack_div" id="tk-1">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1"></span></a>
+				</div>
+				<div>
+					<a href="#" id="fr-1">
+						<div>
+							<span class=" index_table_td_icon_span" id="tb-1">
+								<span class="index_table_td_msg_span" id="tbs-1"></span>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-1">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%end%>
+			<td class="index_table_td_3">
+				<div>
+				</div>
+			</td>
+			<%if history_list[2] then%>
+			<td class="index_table_td_2 mouse_td" value="1">
+				<% if history_list[2]["stack"] == "1" then%>
+				<div class="index_thumbtack_div" id="tk-2" style="opacity:1;filter: alpha(opacity=100);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="0" style ="color:#F08300;"></span></a>
+				</div>
+				<%else%>
+				<div class="index_thumbtack_div" id="tk-2" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1" style ="color:#777777;"></span></a>
+				</div>
+				<%end%>
+				<div>
+					<a href="#" id="fr-2">
+						<div>
+							<span class="icon-<%=history_list[2]["name"]%> index_table_td_icon_span" id="tb-2">
+								<span class="index_table_td_msg_span" id="tbs-2"></span>
+								<script>
+								    updateHisName("2","<%=history_list[2]["name"]%>");
+								</script>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-2" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%else%>
+			<td class="index_table_td_2 mouse_td" value="0">
+				<div class="index_thumbtack_div" id="tk-2">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1"></span></a>
+				</div>
+				<div>
+					<a href="#" id="fr-2">
+						<div >
+							<span class=" index_table_td_icon_span" id="tb-2">
+								<span class="index_table_td_msg_span" id="tbs-2"></span>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-2">
+					<a href="#"><span  class="icon-break break_span" value="2"></span></a>
+				</div>
+			</td>
+			<%end%>
+			<td class="index_table_td_3">
+				<div>
+				</div>
+			</td>
+			<%if history_list[3] then%>
+			<td class="index_table_td_2 mouse_td" value="1">
+				<% if history_list[3]["stack"] == "1" then%>
+				<div class="index_thumbtack_div" id="tk-3" style="opacity:1;filter: alpha(opacity=100);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="0" style ="color:#F08300;"></span></a>
+				</div>
+				<%else%>
+				<div class="index_thumbtack_div" id="tk-3" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1" style ="color:#777777;"></span></a>
+				</div>
+				<%end%>
+				<div>
+					<a href="#" id="fr-3">
+						<div>
+							<span class="icon-<%=history_list[3]["name"]%> index_table_td_icon_span" id="tb-3">
+								<span class="index_table_td_msg_span" id="tbs-3"></span>
+								<script>
+								    updateHisName("3","<%=history_list[3]["name"]%>");
+								</script>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-3" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%else%>
+			<td class="index_table_td_2 mouse_td" value="0">
+				<div class="index_thumbtack_div" id='tk-3'>
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1"></span></a>
+				</div>
+				<div>
+					<a href="#" id="fr-3">
+						<div>
+							<span class=" index_table_td_icon_span" id="tb-3">
+								<span class="index_table_td_msg_span" id="tbs-3"></span>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-3">
+					<a href="#"><span  class="icon-break break_span" value="3"></span></a>
+				</div>
+			</td>
+			<%end%>
+			<td class="index_table_td_1">
+			</td>
+		</tr>
+
+		<tr>
+			<td colspan="7">
+				<div class="index_table_split_line"></div>
+			</td>
+		</tr>
+		<tr>
+			<td class="index_table_td_1">
+			</td>
+			<%if history_list[4] then%>
+			<td class="index_table_td_2 mouse_td" value="1">
+				<% if history_list[4]["stack"] == "1" then%>
+				<div class="index_thumbtack_div" id="tk-4" style="opacity:1;filter: alpha(opacity=100);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="0" style ="color:#F08300;"></span></a>
+				</div>
+				<%else%>
+				<div class="index_thumbtack_div" id="tk-4" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1" style ="color:#777777;"></span></a>
+				</div>
+				<%end%>
+				<div>
+					<a href="#" id="fr-4">
+						<div>
+							<span class="icon-<%=history_list[4]["name"]%> index_table_td_icon_span" id="tb-4">
+								<span class="index_table_td_msg_span" id="tbs-4"></span>
+								<script>
+								    updateHisName("4","<%=history_list[4]["name"]%>");
+								</script>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-4" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%else%>
+			<td class="index_table_td_2 mouse_td" value="0">
+				<div class="index_thumbtack_div" id = "tk-4">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1"></span></a>
+				</div>
+				<div>
+					<a href="#" id="fr-4">
+						<div>
+							<span class=" index_table_td_icon_span" id="tb-4">
+								<span class="index_table_td_msg_span" id="tbs-4"></span>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id = "tl-4">
+					<a href="#"><span  class="icon-break break_span" value="4"></span></a>
+				</div>
+			</td>
+			<%end%>
+			<td class="index_table_td_3">
+				<div>
+				</div>
+			</td>
+			<%if history_list[5] then%>
+			<td class="index_table_td_2 mouse_td" value="1">
+				<% if history_list[5]["stack"] == "1" then%>
+				<div class="index_thumbtack_div" id="tk-5" style="opacity:1;filter: alpha(opacity=100);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="0" style ="color:#F08300;"></span></a>
+				</div>
+				<%else%>
+				<div class="index_thumbtack_div" id="tk-5" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1" style ="color:#777777;"></span></a>
+				</div>
+				<%end%>
+				<div>
+					<a href="#" id="fr-5">
+						<div>
+							<span class="icon-<%=history_list[5]["name"]%> index_table_td_icon_span" id="tb-5">
+								<span class="index_table_td_msg_span" id="tbs-5"></span>
+								<script>
+								    updateHisName("5","<%=history_list[5]["name"]%>");
+								</script>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-5" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%else%>
+			<td class="index_table_td_2 mouse_td" value="0">
+				<div class="index_thumbtack_div" id="tk-5">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1"></span></a>
+				</div>
+				<div>
+					<a href="#" id="fr-5">
+						<div >
+							<span class=" index_table_td_icon_span" id="tb-5">
+								<span class="index_table_td_msg_span" id="tbs-5"></span>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-5">
+					<a href="#"><span  class="icon-break break_span" value="5"></span></a>
+				</div>
+			</td>
+			<%end%>
+			<td class="index_table_td_3 ">
+				<div>
+				</div>
+			</td>
+			<%if history_list[6] then%>
+			<td class="index_table_td_2 mouse_td" value="1">
+				<% if history_list[6]["stack"] == "1" then%>
+				<div class="index_thumbtack_div" id="tk-6" style="opacity:1;filter: alpha(opacity=100);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="0" style ="color:#F08300;"></span></a>
+				</div>
+				<%else%>
+				<div class="index_thumbtack_div" id="tk-6" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1" style ="color:#777777;"></span></a>
+				</div>
+				<%end%>
+				<div>
+					<a href="#" id="fr-6">
+						<div>
+							<span class="icon-<%=history_list[6]["name"]%> index_table_td_icon_span" id="tb-6">
+								<span class="index_table_td_msg_span" id="tbs-6"></span>
+								<script>
+								    updateHisName("6","<%=history_list[6]["name"]%>");
+								</script>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-6" style="opacity:0;filter: alpha(opacity=0);">
+					<a href="#"><span  class="icon-break break_span" value="1"></span></a>
+				</div>
+			</td>
+			<%else%>
+			<td class="index_table_td_2 mouse_td" value="0">
+				<div class="index_thumbtack_div" id="tk-6">
+					<a href="#"><span  class="icon-thumbtack thumbtack_span" value="1"></span></a>
+				</div>
+				<div>
+					<a href="#" id="fr-6">
+						<div>
+							<span class=" index_table_td_icon_span" id="tb-6">
+								<span class="index_table_td_msg_span" id="tbs-6"></span>
+							</span>
+						</div>
+					</a>
+				</div>
+				<div class="index_break_div" id="tl-6">
+					<a href="#"><span  class="icon-break break_span" value="6"></span></a>
+				</div>
+			</td>
+			<%end%>
+			<td class="index_table_td_1">
+			</td>
+		</tr>
+	</table>
+</div>
+<script type="text/javascript">
+	var phy_connect_wan = 0;
+
+	$(function(){
+		<% if upgrading then %>
+			start_progress_bar(100);
+		<% end %>
+		
+		<% if upfailed then %>
+			$("#prompt_button").click();
+		<% end %>
+	});
+
+
+function indexAspReq() {
+	$.ajax({
+	type:"post",
+	url:"/LocalIndex.asp?action=get",
+	success:function(s, other) {
+
+		if(s.phy_connect)
+		{
+			phy_connect_wan = 1;
+		}
+		else
+		{
+			phy_connect_wan = 0;
+		}
+		if(s.devicenum)
+		{
+			$("#devicenum").html(s.devicenum);
+		}
+
+		if( s.wifi2G_on_off == 1)
+		{
+			$("#wifitext_2").hide();
+		}
+		else
+		{
+			$("#wifitext_2").show();
+		}
+
+		if( s.wifi5G_on_off == 1)
+		{
+			$("#wifitext_5").hide();
+		}
+		else
+		{
+			if(s.wifi2G_on_off == 1)
+			{
+				$("#wifitext_5").css("top","-45px");
+			}
+			$("#wifitext_5").show();
+		}
+
+		if(phy_connect_wan)
+		{
+			$(".wan_connect_msg_div").show();
+			$(".wan_break_msg_div").hide();
+			if (s.rx_rate) {
+				var rx_kbytes = s.rx_rate/1024;
+				if (rx_kbytes/1024 > 1) {
+					$("#downspeed").html((s.rx_rate/(1024*1024)).toFixed(2) + "MB/S");
+				} else {
+					$("#downspeed").html((s.rx_rate/1024).toFixed(2) + "KB/S");
+				}
+			}
+			if (s.tx_rate) {
+				var tx_kbytes = s.tx_rate/1024;
+				if (tx_kbytes/1024 > 1) {
+					$("#upspeed").html((s.tx_rate/(1024*1024)).toFixed(2) + "MB/S");
+				} else {
+					$("#upspeed").html((s.tx_rate/1024).toFixed(2) + "KB/S");
+				}
+			}
+		}
+		else
+		{
+			$(".wan_connect_msg_div").hide();
+			$(".wan_break_msg_div").show();
+		}
+	}});
+}
+
+	indexAspReq();
+	setInterval(indexAspReq, 5000);
+
+	function delhref(num)
+	{
+		var nhref = "#";
+		var frid = "#fr-"+num;;
+		var tbid = "#tb-"+num;;
+		var tbsid = "#tbs-"+num;
+		var tkid = "#tk-"+num;
+		var tlid = "#tl-"+num;
+		var tbclass = " index_table_td_icon_span";
+		$(tbid).attr("class",tbclass);
+		$(tkid).css("opacity","0");
+		$(tkid).css("filter","alpha(opacity=0)");
+		$(tkid).parents("td").attr("value","0");
+		$(tkid).find("span").removeClass("thumbtack_span");
+		$(tlid).css("opacity","0");
+		$(tlid).css("filter","alpha(opacity=0)");
+		$(tlid).find("span").removeClass("break_span");
+		$(frid).attr("href",nhref);
+		$(tbsid).html("")
+		
+		$(tkid).attr("value","")
+	}	
+	
+	function gethref(data,num)
+	{
+		var v = data.name;
+		var stack = data.stack;
+		var tbid = "#tb-"+num;;
+		var tkid = "#tk-"+num;
+		var tlid = "#tl-"+num;
+		var tbclass = "icon-"+v+" index_table_td_icon_span";
+		$(tbid).attr("class",tbclass);//显示功能图片
+		if(stack == 1){
+			$(tkid).find("span").css("color","#F08300");
+			$(tkid).find("span").attr("value","0");
+		}else{
+			$(tkid).find("span").css("color","#777777");
+			$(tkid).find("span").attr("value","1");
+		}
+		$(tkid).css("opacity",stack);   //钉住按钮透明or显示 （0：透明；1：显示）
+		if(stack == 0){
+			$(tlid).css("filter","alpha(opacity=0)");
+		}else{
+			$(tlid).css("filter","alpha(opacity=100)");
+		}
+		$(tkid).parents("td").attr("value","1"); //显示钉住和删除按钮
+		$(tkid).find("span").addClass("thumbtack_span"); //增加钉住按钮的事件类
+		$(tlid).css("opacity","0");	//删除按钮透明
+		$(tlid).css("filter","alpha(opacity=0)");
+		$(tlid).find("span").addClass("break_span");//增加删除按钮的事件类
+		
+		$(tkid).attr("value", v)
+	
+		updateHisName(num,v)
+
+		}
+		function gethisory()
+		{		
+			XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_gethistory")%>',null,
+				function(s, x)
+				{
+
+					if(x[0][0])
+					{
+						gethref(x[0][0],1);
+					}
+					else
+						delhref(1);
+					if(x[0][1])
+					{
+						gethref(x[0][1],2);
+					}
+					else
+						delhref(2);
+					if(x[0][2])
+					{
+						gethref(x[0][2],3);
+					}
+					else
+						delhref(3);
+					if(x[0][3])
+					{
+						gethref(x[0][3],4);
+					}
+					else
+						delhref(4);
+					if(x[0][4])
+					{
+						gethref(x[0][4],5);
+					}
+					else
+						delhref(5);
+					if(x[0][5])
+					{
+						gethref(x[0][5],6);
+					}
+					else
+						delhref(6);
+
+					del_hand();
+				}	
+				);
+
+		}
+
+		$(function(){
+			gethisory();
+		});
+
+		//钉住事件
+		$(".thumbtack_span").click(function(){
+			var str_value = $(this).attr("value");
+			var str_color = $(this).css("color");
+			if(str_color == "rgb(119, 119, 119)"){
+				$(this).css("color","#F08300");
+				$(this).parents("td").find(".index_break_div").css("opacity","0");
+				$(this).parents("td").find(".index_break_div").css("filter","alpha(opacity=0)");
+			}else{
+				$(this).css("color","#777777");
+				$(this).parents("td").find(".index_break_div").css("opacity","1");
+				$(this).parents("td").find(".index_break_div").css("filter","alpha(opacity=100)");
+			}
+
+			if(str_value == "1"){ //未钉住 --> 钉住
+				$(this).attr("value","0");
+				var data = "name="+$(this).parents(".index_thumbtack_div").attr("value")+"&stack=1";
+				XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_stackhistory")%>',data,function(s, x)	{
+					if(x[0].ok && x[0].ok =="1")
+					{
+						gethisory();
+					}
+				}
+				);
+			}else{ //钉住 --> 解钉
+				$(this).attr("value","1");
+				var data = "name="+$(this).parents(".index_thumbtack_div").attr("value")+"&stack=0";
+				XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_stackhistory")%>',data,function(s, x)	{
+					if(x[0].ok && x[0].ok =="1")
+					{
+						gethisory();
+					}
+				}
+				);
+			}
+		});
+		//删除事件
+		$(".break_span").click(function(){
+			var data = "name=" + $(this).parents("td").find(".index_thumbtack_div").attr("value");
+			var str_value = $(this).parents("td").find(".thumbtack_span").attr("value");
+			if(str_value == "1"){
+				XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_deletehistory")%>',data,function(s, x)	{
+					if(x[0].ok && x[0].ok =="1")
+					{
+						gethisory();
+					}
+				}
+				);
+			}
+		});
+
+		$(".mouse_td").on("mouseenter",function(){
+			var str_td_value=$(this).attr("value");
+			if(str_td_value == "1"){
+				var str_value = $(this).find(".icon-thumbtack").attr("value");
+				if(str_value == "1"){
+					$(this).find(".index_break_div").css("opacity","1");
+					$(this).find(".index_break_div").css("filter","alpha(opacity=100)");
+				}else{
+					$(this).find(".index_break_div").css("opacity","0");
+					$(this).find(".index_break_div").css("filter","alpha(opacity=0)");
+				}
+				$(this).find(".index_thumbtack_div").css("opacity","1");
+				$(this).find(".index_thumbtack_div").css("filter","alpha(opacity=100)");
+			}
+		}).on("mouseleave",function(){
+			var str_value = $(this).find(".icon-thumbtack").attr("value");
+			if(str_value == "1"){
+				$(this).find(".index_thumbtack_div").css("opacity","0");
+				$(this).find(".index_thumbtack_div").css("filter","alpha(opacity=0)");
+
+			}else{
+				$(this).find(".index_thumbtack_div").css("opacity","1");
+				$(this).find(".index_thumbtack_div").css("filter","alpha(opacity=100)");
+			}
+			$(this).find(".index_break_div").css("opacity","0");
+			$(this).find(".index_break_div").css("filter","alpha(opacity=0)");
+		});
+	</script>
+	<%+footer%>

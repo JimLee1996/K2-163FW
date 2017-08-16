@@ -1,0 +1,8 @@
+Package: device_manage
+Version: 1.0.0-1
+Depends: libc, iptables-mod-hashlimit
+Source: package/phicomm/device_manage
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 1992
+Description:  实现终端设备上网规则配置，包括响应路由重启、hotplug事件和网页规则配置调用

@@ -1,0 +1,4 @@
+/usr/lib/lua/luci/model/cbi/admin_networkset/networkset.lua
+/usr/lib/lua/luci/i18n/networkset.zh-cn.lmo
+/etc/nvram2uci/networkset
+/usr/lib/lua/luci/controller/admin/networkset.lua

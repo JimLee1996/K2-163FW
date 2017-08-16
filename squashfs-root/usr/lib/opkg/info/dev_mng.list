@@ -1,0 +1,4 @@
+/etc/oui.txt
+/usr/bin/dev_mng
+/usr/bin/ip_eventd
+/etc/init.d/dev_mng

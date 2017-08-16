@@ -1,0 +1,5 @@
+/usr/lib/lua/luci/i18n/parentctl.zh-cn.lmo
+/etc/config/parentctl
+/usr/lib/lua/luci/view/parentctl/parentctl.htm
+/etc/init.d/parentctl
+/usr/lib/lua/luci/controller/admin/parentctl.lua

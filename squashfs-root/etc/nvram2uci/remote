@@ -1,0 +1,10 @@
+#!/bin/sh 
+
+remote_enable=`nvram get linux remote_access_en`
+remote_port=`nvram get linux remote_allow_port`
+remote_ip=`nvram get linux remote_allow_ip`
+
+uci set remote.remote.remote_enable=$remote_enable
+uci set remote.remote.remote_port=$remote_port
+uci set remote.remote.remote_ip=$remote_ip
+uci commit

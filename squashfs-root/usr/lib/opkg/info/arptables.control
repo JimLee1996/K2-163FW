@@ -1,0 +1,8 @@
+Package: arptables
+Version: 0.0.4-1
+Depends: libc, kmod-arptables
+Source: package/network/utils/arptables
+Section: net
+Architecture: ramips_24kec
+Installed-Size: 20282
+Description:  ARP firewalling software

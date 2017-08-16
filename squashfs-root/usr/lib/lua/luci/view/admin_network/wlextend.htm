@@ -1,0 +1,425 @@
+<%+header%>
+<%
+local uci = require("luci.model.uci").cursor()
+local phicomm_lua = require "phic"
+local apcli_lua = require "apcli"
+local default_wan = phicomm_lua.default_wan() or {"eth0.2"}
+local current_wan = uci:get("network", "wan", "ifname") or "eth0.2"
+if current_wan == "apcli0" then
+	local tmpTable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliSsid") or {""}
+	apcli_ssid = tmpTable[1]
+	tmpTable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliEnable") or {"0"}
+	apcli_enable = tmpTable[1]
+	tmpTable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliBssidBak") or {""}
+	apcli_bssid = tmpTable[1]
+	tmpTable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliAuthMode") or {"OPEN"}
+	apcli_auth = tmpTable[1]
+	apcli_aptype = "1"
+
+	if apcli_auth ~= "OPEN" then
+		tmpTable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliEncrypType") or {""}
+		apcli_enc = tmpTable[1]
+		tmpTable = phicomm_lua.get_wifi_iface_config("ra0", "ApCliWPAPSK") or {""}
+		apcli_pskkey = tmpTable[1]
+	else
+		apcli_enc = "TKIP"
+		apcli_pskkey = ""
+	end
+elseif current_wan == "apclii0" then
+	local tmpTable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliSsid") or {""}
+	apcli_ssid = tmpTable[1]
+	tmpTable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliEnable") or {"0"}
+	apcli_enable = tmpTable[1] 
+	tmpTable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliBssidBak") or {""}
+	apcli_bssid = tmpTable[1] or ""
+	tmpTable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliAuthMode") or {"OPEN"}
+	apcli_auth = tmpTable[1]
+	apcli_aptype = "2"
+
+	if apcli_auth ~= "OPEN" then
+		tmpTable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliEncrypType") or {""}
+		apcli_enc = tmpTable[1]
+		tmpTable = phicomm_lua.get_wifi_iface_config("rai0", "ApCliWPAPSK") or {""}
+		apcli_pskkey = tmpTable[1]
+	else
+		apcli_enc = "TKIP"
+		apcli_pskkey = ""
+	end
+else
+	apcli_aptype = "0"
+	apcli_ssid = ""
+	apcli_enable = ""
+	apcli_bssid = ""
+	apcli_auth = "OPEN"
+	apcli_enc = "TKIP"
+	apcli_pskkey = ""
+end
+
+%>
+<script type="text/javascript" src="<%=media%>/js/advanced.js"></script>
+<script>	
+this.REGX_HTML_ENCODE = /"|&|'|<|>|[\x00-\x20]|[\x7F-\xFF]|[\u0100-\u2700]/g; 
+function htmlEncode(s){
+      return (typeof s != "string") ? s :
+          s.replace(this.REGX_HTML_ENCODE,
+                    function($0){
+                        var c = $0.charCodeAt(0), r = ["&#"];
+                        c = (c == 0x20) ? 0xA0 : c;
+                        r.push(c); r.push(";");
+                        return r.join("");
+                    });
+ }
+
+function initSafeselect(option_str){
+	if( option_str == "OPEN" ){
+		$("#encselectbody").hide();
+		$("#wisp_passwd").hide();
+		$("#safeselectbody input").val("OPEN");
+	}else if( option_str == "WPAPSK" ){
+		$("#encselectbody").show();
+		$("#wisp_passwd").show();
+		$("#safeselectbody input").val("WPA-PSK");
+	}else if( option_str == "WPA2PSK" ){
+		$("#encselectbody").show();
+		$("#wisp_passwd").show();
+		$("#safeselectbody input").val("WPA2-PSK");
+	}
+	$("#safeselectbody input[name=safeSelect]").val(option_str);
+}
+
+
+function initEncSelect(option_str){
+	$("#encselectbody input").val(option_str);
+}
+
+function init_config(){
+	var radio_switch;
+	var extend_ssid;
+	<%if (current_wan == "apcli0" or current_wan == "apclii0") and apcli_enable == "1" then%>
+		$("#wlex_enable").val("1");
+		radio_switch = 1;
+	<% else %>
+		$("#wlex_enable").val("0");
+		radio_switch = 0;
+	<% end %> 
+	if(radio_switch == 1){
+		$("#radio_val").val("1");
+		$("#wir_ssid").show();
+		$(".radiodiv").find("img[value=1]").attr("src","<%=media%>/images/icon_radio_on.png")
+		$(".radiodiv").find("img[value=0]").attr("src","<%=media%>/images/icon_radio_off.png")
+		
+		extend_ssid = "<%=apcli_lua.url_encode(apcli_ssid)%>";
+		//extend_ssid = extend_ssid.replace(/([",'])/g,'//$1');	
+		if(extend_ssid != ""){
+			$("#wir_ssid").val(extend_ssid);	
+		}
+		else{
+			$("#wir_ssid").val("请手动输入或扫描选择");
+		}
+		extend_auth = "<%=apcli_auth%>";
+		initSafeselect(extend_auth);
+
+		if(extend_auth == "WPAPSK" || extend_auth == "WPA2PSK"){
+			$("#wisp_passwd").show();
+			apcli_enc = "<%=apcli_enc%>";
+			initEncSelect(apcli_enc);
+		}
+		else{
+			$("#encselectbody").hide();
+		}	
+		$(".contentDisplay").show();
+	}
+	else{
+		$("#radio_val").val("0");
+		$(".radiodiv").find("img[value=1]").attr("src","<%=media%>/images/icon_radio_off.png")
+		$(".radiodiv").find("img[value=0]").attr("src","<%=media%>/images/icon_radio_on.png")
+		$(".contentDisplay").hide();
+	}
+}
+
+$(function(){
+	var safeSelect = "<%=apcli_auth%>";//此处4个变量的赋值更换你后来传过来的值
+	var encSelect = "<%=apcli_enc%>";
+
+	init_config();
+	$("#wir_edit").click(function(){
+		$("#wir_ssid").val("");
+		$("#apcli_bssid").val("");
+		$("#safeselectbody").show();
+		$("#safeselectbody input").val("OPEN");
+		$("#encselectbody").hide();
+		$("#wisp_passwd").hide();
+		initSafeselect("OPEN");
+		initEncSelect("TKIP");
+		$("#password").val("");
+	});
+
+	$("#safeselectbody li").click(function(){
+		var option_val = $(this).attr("value");
+		initSafeselect(option_val);
+	});
+
+	$("#encselectbody li").click(function(){
+		var option_str = $(this).children("a").html();
+		initEncSelect(option_str);
+	});
+});
+</script>	
+<form action="<%=luci.dispatcher.build_url("admin", "more_wlextend")%>" method="POST" id="wlextend" name="wlextend">
+	<!-- wirExte -->
+	<div class="setcontent advanced">
+		<div class="title-span"><span >无线扩展</span></div>
+		<div class="title-underline"></div>
+		<div class="setlinediv margintop-30">
+			<span class="link-span">无线扩展：</span>
+			<div class="radiodiv">
+				<img class="radioSwitch showOrHide setval" name="wirExte" src="<%=media%>/images/icon_radio_off.png" value="1" />
+				<span>开启</span> 
+			</div>
+			<div class="radiodiv">
+				<img class="radioSwitch showOrHide setval" name="wirExte" src="<%=media%>/images/icon_radio_on.png" value="0" />
+				<span>关闭</span>
+			</div>		
+			<a href="#" title="<%=translate('wlextend help')%>">
+				<div class="iconhelpdiv">
+					<span class="icon-help color-orange"></span>
+				</div>
+			</a>
+		</div>
+		<!--<form id="wirExte_conf" action="<%=REQUEST_URI%>/" method="post">-->
+		<input type="hidden" id="radio_val" name="wirExte" value="0" />
+		<!--</form>-->
+		<div class="contentDisplay" style="display: none;">	
+			<div class="setlinediv margintop-15">
+				<div>
+					<span class="link-span">网络名称：</span>
+				</div>
+				<div><input type="text" id="wir_ssid" name="wir_ssid" class="input-large" placeholder="请手动输入或扫描选择" value="" /></div>
+				<div id="wir_scan" class="icon-search color-orange mouse-hover icon-div" data-toggle="modal" data-target="#scanResult"></div>
+				<div id="wir_edit" class="icon-edit color-orange mouse-hover icon-div"></div>
+			</div>									
+			<div class="setlinediv margintop-15" id="safeselectbody">
+				<span class="link-span">安全模式：</span>
+				<div class="dropdown dropdown_div" style="margin-left: 220px;">
+					<div class="dropdown_button" onclick="dropdown_click(this)" id="safeSelect" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<input readonly="readonly" onfocus="this.blur();" UNSELECTABLE="on" value="OPEN"/>
+						<span class="icon-downarrow"></span>
+					</div>
+					<ul class="dropdown-menu" aria-labelledby="dLabel">
+						<li value="OPEN"><a value="OPEN">OPEN</a></li>						
+						<li value="WPAPSK"><a value="WPA-PSK">WPA-PSK</a></li>
+						<li value="WPA2PSK"><a value="WPA2-PSK">WPA2-PSK</a></li>											
+					</ul>
+					<input name="safeSelect" type="hidden" value="OPEN"/>
+				</div>																		
+			</div>
+			<div id="encselectbody" class="setlinediv margintop-15" style="display: none;">
+				<span class="link-span">加密类型：</span>
+				<div class="dropdown dropdown_div" style="margin-left: 220px;">
+					<div class="dropdown_button" onclick="dropdown_click(this)" id="encSelect" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<input name="encSelect" readonly="readonly" onfocus="this.blur();" UNSELECTABLE="on" value="TKIP"/>
+						<span class="icon-downarrow"></span>
+					</div>
+					<ul class="dropdown-menu" aria-labelledby="dLabel">
+						<li><a value="TKIP">TKIP</a></li>
+						<li><a value="AES">AES</a></li>											
+					</ul>
+				</div>									
+			</div>
+			<div id="wisp_passwd" class="setlinediv margintop-15 scan_wir" style="display: none;">
+				<span class="link-span">密码：</span>
+				<input id="password" name="apcli_pskkey" class="input-large" type="password" value="<%=apcli_pskkey%>"/>
+				<img class="img_change user_new_pwd" style="vertical-align: middle;float: left;margin-top: 5px;margin-left: 10px;" src="<%=media%>/images/icon_visible_off.png" value="1"/>
+			</div>							
+		</div>
+		<input type="hidden" id="apcli_bssid" name="apcli_bssid" value="<%=apcli_bssid%>">
+		<input type="hidden" id="apcli_aptype" name="apcli_aptype" value="<%=apcli_aptype%>">
+		<div class="setlinediv margintop-30">
+			<div type="button" class="button-square-lg btndiv" id="save_wlextend">保 存</div>
+		</div>
+		<div class="modal fade" id="scanResult">	
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<div type="button" class="close icon-break" data-dismiss="modal" aria-label="Close"></div>
+					</div>
+					<div class="title-span color-orange">扫描结果</div>
+					<div class="title-underline marginbottom-15 margin-left-right10"></div>
+					<div id="aplist_div">正在为您扫描AP列表...</div>
+					<div class="margintop-30" style="margin-top: 23px;">
+						<input type="button" class="button-square-lg" style="margin-bottom: 23px;" id="refresh_btn" value="刷 新" onclick="btnRefresh()"/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal fade" id="wltd_md_error_special" role="dialog" aria-labelledby="myModalLabel">
+			<div class="modal-dialog alert_dialog">
+				<div class="modal-content alert_content">
+					<span id="wltd_configstatus_up3" class="alert_msg">暂时不支持上联加密方式为WEP或WPAEnterprise的SSID</span>
+					<button type="button" class="button-square-sm" id="wltd_error_confirm_special" onclick="errorConfirmSpecial()">确定</button>
+				</div>
+			</div>
+		</div>
+		<script language="javascript">
+			function get_ap_list(){
+				var magicnumber="8765323785174634734";
+				$.ajax({
+					type: "POST",
+					url: "<%=luci.dispatcher.build_url("admin", "ap_list")%>",
+					error: function(msg) {
+						Alert("获取失败！");
+					},
+					success: function(msg){
+						if(msg.indexOf(magicnumber)>0){
+							$("#aplist_div").html("");
+							$("#aplist_div").html(msg);
+						}
+						else {
+							$("#aplist_div").html("登录超时，请点击确定后重新登录。");
+							document.getElementById("refresh_btn").value="确 定";
+						}
+					}
+				})
+
+			}
+			function btnRefresh(){
+				if(document.getElementById("refresh_btn").value=="刷 新"){
+					$("#aplist_div").html("正在为您扫描AP列表...");
+					get_ap_list();
+				}else if(document.getElementById("refresh_btn").value=="确 定"){
+					$("#scanResult").modal("hide");
+					location.href = location.href;
+				}
+			}
+		function errorConfirmSpecial(){
+			$("#wltd_md_error_special").modal("hide");
+			$("#scanResult").modal("show");
+		}
+
+		this.REG_NONE_READ = /"/g; 
+		function lua_encode(s){
+			return (typeof s != "string") ? s :
+		          s.replace(this.REG_NONE_READ,
+		                    function($0){
+		                        var r = ["\\"];
+		                        r.push($0);
+		                        return r.join("");
+		                    });
+		}
+
+		function checkSpecialChar(s)
+		{
+			for(var i = 0; i < s.length; i++)
+			{
+				if(s.charAt(i).match(/[\u002C]/) || s.charAt(i).match(/[\u003B]/))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+			$(function(){
+				$("#wir_scan").click(function(){
+					get_ap_list();
+				});
+				$("#save_wlextend").click(function(){  
+					if(document.wlextend.cbi_validators){
+						document.wlextend.cbi_validators = null;
+					}
+
+					var cmt_enable = $("input[name=wirExte]").val();
+					var cmt_authmode = $("input[name=safeSelect]").val();
+					var cmt_ssid = $("input[name=wir_ssid]").val();
+					var cmt_encryp = $("input[name=encSelect]").val();
+					var cmt_aptype = $("input[name=apcli_aptype]").val();
+					var cmt_wpapsk = $("input[name=apcli_pskkey]").val();
+					var cmt_bssid = $("input[name=apcli_bssid]").val();
+					if( cmt_enable == "1") {
+						//ssid
+						cbi_validate_field('wir_ssid',false, 'sperangelength(1,32)', '网络名称', error_msg);
+
+						if(cmt_authmode == "WPAPSK" || cmt_authmode == "WPA2PSK"){
+							cbi_validate_field('password',false, 'wpakey', '密码', error_msg);
+						}
+						else if( cmt_authmode != "OPEN" )
+						{
+							Alert("请选择安全模式");
+							return;
+						}
+						
+						if(!cbi_validate_form(document.wlextend, null, Alert)){
+							return false;
+						}
+						var e = document.getElementsByClassName("loading_msg_span")[0];
+						$("#wan_check_modal").modal("show");
+						$.ajax({
+							type: "POST",
+							url: "<%=luci.dispatcher.build_url("admin","more_wlextend", "wirExte")%>",
+							data: {
+								wirExte:cmt_enable,
+								wir_ssid:lua_encode(cmt_ssid),
+								safeSelect:cmt_authmode,
+								apcli_aptype:cmt_aptype,
+								pskkey:lua_encode(cmt_wpapsk),
+								apcli_bssid:cmt_bssid,
+								encSelect:cmt_encryp
+							},
+							error: function(msg) {
+							},
+							success: function(data,testStatus){
+								if(-89 == data[0].result)
+								{
+									$("#wan_check_modal").modal("hide");
+									Alert("无法找到上联SSID！");
+								}
+								else if(0 != data[0].result)
+								{
+									$("#wan_check_modal").modal("hide");
+									Alert("不支持的上联AP参数！");
+									cmt_enable = "0";
+									$.ajax({
+										type: "POST",
+										url: "<%=luci.dispatcher.build_url("admin","more_wlextend", "wirExte")%>",
+										data: {
+											 wirExte:cmt_enable
+										}
+									})
+								}
+								else
+								{
+									$.ajax({
+										type: "POST",
+										url: "<%=luci.dispatcher.build_url("admin","more_wlextend", "reboot")%>"
+									})
+									setTimeout(function(){ $("#wan_check_modal").modal("hide"); $("#wlextend").submit();},40000);
+								}
+							}
+						})
+					}
+					else
+					{
+						$("#wan_check_modal").modal("show");
+						setTimeout(function(){ $("#wan_check_modal").modal("hide"); $("#wlextend").submit();},30000);
+						$.ajax({
+							type: "POST",
+							url: "<%=luci.dispatcher.build_url("admin","more_wlextend", "wirExte")%>",
+							data: {
+								wirExte:cmt_enable
+							},
+							error: function(msg) {
+							},
+							success: function(data,testStatus){
+								$.ajax({
+									type: "POST",
+									url: "<%=luci.dispatcher.build_url("admin","more_wlextend", "reboot")%>"
+								})
+							}
+						})
+					}
+				});
+			});
+		</script>
+	</div><!--end wirExte-->					
+</form>
+<%+footer%>

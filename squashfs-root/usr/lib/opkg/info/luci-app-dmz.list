@@ -1,0 +1,8 @@
+/etc/uci-defaults/luci-dmz
+/etc/init.d/DMZ
+/etc/hotplug.d/iface/73-dmz
+/usr/lib/lua/luci/i18n/dmz.zh-cn.lmo
+/etc/nvram2uci/dmz
+/usr/lib/lua/luci/controller/admin/DMZ.lua
+/etc/config/DMZ
+/usr/lib/lua/luci/model/cbi/DMZ_config.lua

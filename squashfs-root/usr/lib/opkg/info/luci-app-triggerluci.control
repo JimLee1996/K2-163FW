@@ -1,0 +1,9 @@
+Package: luci-app-triggerluci
+Version: git-adab218-1
+Depends: libc
+Source: package/ramips/ui/luci-phicomm
+Section: luci
+Maintainer: LuCI Development Team <luci@lists.subsignal.org>
+Architecture: ramips_24kec
+Installed-Size: 330
+Description:  triggerluci for loading cache

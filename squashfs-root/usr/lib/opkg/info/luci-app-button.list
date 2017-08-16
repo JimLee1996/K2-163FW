@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/controller/admin/button.lua
+/usr/lib/lua/luci/i18n/button.zh-cn.lmo
+/usr/lib/lua/luci/model/cbi/button.lua

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>  
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>           
+    <%+title%>
+    <style>
+        .yellow{background-color: #F08300;}
+        .font-whrite{color: #FFFFFF;}
+        .font-yellow{color:#F08300}
+        .flr18{font-size:18px;}
+        .link-wifi{margin-left: 10px;}
+        .link-contenttitle a{color: #000000;font-size: 16px;}
+        .link-left{width:48%;display:inline-table;text-align:center;border-right:1px solid #F2F2F2;height:40px;}
+        .link-right{display:inline-table;text-align:center;width:48%;}
+        .link-contenttitle{line-height: 95px;}
+        .link-dowland{text-align:center;}
+        .dowland-left{display: inline-table; width: 48%;text-align: center;}
+        .dowland-right{display: inline-table; width: 48%;text-align: center;margin-top: 10px;}
+        .font-gray{color:#9F9F9F;border:0;}
+        .link-icon{width:50px;height:50px;background-color:#458EFD;border-radius:15px;line-height:50px;margin-top:15px;text-align:center;}
+        .link-icon-loading{position:absolute;margin:20px 17px;}
+        .header-img{margin:35px 0 20px 0;text-align:center;}
+        .header-img img{width:22%; height:12%;}
+        .link-green{margin:20px 0;}
+        .link-green img{width:12%; height:6%;}
+        .green-left{margin-right:50px;}
+        .green-right{margin-left:50px;}
+        .link-phone{margin-right:43px;}
+        .link-net{margin-left:43px;}
+        .link-success{margin:28px 0 5px 0;}
+        .link-shouye{margin:28px 0 5px 0;}
+        .link-shouye img{width:22%; height:12%;}
+        @media screen and (min-width:320px){
+            .header-img{margin:35px 0 5px 0;text-align:center;}
+            .header-img img{width:20%; height:10%;}
+            .link-green img{width:10%; height:5%;}
+            .link-shouye img{width:20%; height:10%;}
+            .link-success{margin:10px 0 0 0;}
+            .link-shouye{margin:10px 0 0 0;}
+            .link-green{margin:10px 0;}
+        }
+        @media screen and (min-width:360px){
+            .header-img{margin:35px 0 5px 0;text-align:center;}
+            .header-img img{width:22%; height:12%;}
+            .link-green img{width:12%; height:6%;}
+            .link-shouye img{width:22%; height:12%;}
+            .link-success{margin:28px 0 5px 0;}
+            .link-shouye{margin:28px 0 5px 0;}
+            .link-green{margin:26px 0;}
+        }
+        @media screen and (max-width: 414px){
+            .dowland-left{width: 64%;}
+            .dowland-right{width: 32%;} 
+        }
+        @media screen and (max-width: 320px){
+            .dowland-left{width: 68%;}
+            .dowland-right{width: 28%;} 
+        }        
+    </style>        
+</head>
+<body>
+    <header>
+        <div class="container-fluid yellow">
+            <div class="time">
+            <font class="font-whrite"></font>            </div>
+            <div class="wifi-title" style="height:16px;">
+                <a class="left font-whrite" href="<%=luci.dispatcher.build_url("admin", "logout")%>" style="text-decoration:none;">退出</a>
+                <font class="flr18 font-whrite"></font>    
+            </div>
+            <div class="header-img">
+                <img src="<%=media%>/images/shouye_wifi.png" alt="" width="90"/><br/>
+                <div class="link-green" style="margin:10px 0;">
+                <img src="<%=media%>/images/xinhao_green_left.png" alt="" height="58" class="green-left"/>
+                <img src="<%=media%>/images/xinhao_green_right.png" alt="" height="58" class="green-right"/>
+                </div>
+                <div class="link-shouye" style="margin:10px 0;">
+                <img src="<%=media%>/images/shouye_phone&mac.png" alt="" width="88" class="link-phone"/>
+                <img src="<%=media%>/images/shouye_net.png" alt="" width="80" class="link-net"/>
+                </div>
+                <div class="link-success" style="margin:12px 0 -2px 0;">
+                    <span class="success font-whrite" id="wan_error_span" ></span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="container-fluid">        
+        <div class="link-contenttitle" style="height:98px;">
+            <span class="link-left">
+                <a href="<%=luci.dispatcher.build_url("admin", "h5","linktowifi")%>" style="text-decoration:none;"><img src="<%=media%>/images/link-wifiset.png" alt="" width="44"/><font class="link-wifi" style="text-decoration:none;"> WIFI设置</font></a>
+            </span>                
+            <span class="link-right"><a href="<%=luci.dispatcher.build_url("admin", "h5","linktointernet")%>" style="text-decoration:none;"><img src="<%=media%>/images/link-net.png" alt="" width="38"/> <font style="margin-left:5px;text-decoration:none;">上网设置</font></a></span>
+        </div>        
+        <div class="link-dowland" id="downcode" style="display:none;">
+            <div class="dowland-left">
+                <div style="width: 200px;height: 30px;margin: 0 auto;text-align: left;">
+                    <a href="http://app.phiwifi.phicomm.com/Service/App/downloadpage/chanel/1H5W" style="text-decoration:none;">
+                        <h3 class="flr18 font-yellow">下载斐讯路由器APP</h3>    
+                    </a>                    
+                </div>
+                <div style="width: 200px;height: 30px;margin: 0 auto;text-align: left;">
+                    <p class="font-gray">出门在外，也能随时玩转路由器</p>
+                </div>                
+            </div>
+            <div class="dowland-right"> 
+                <img id="applogo" style="width: 50px;height: 50px;" src="<%=media%>/images/APPlogo.png" /> 
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+$(function(){
+	check_network();
+});
+
+function fun_sys_error_8()
+{
+	$("#wan_error_span").html("WAN口已连接！");
+}
+
+function network_sys_error_2(s)
+{
+	if(s.NetworkType == 2)  //静态IP问题
+	{
+		$("#wan_error_span").html("网络异常！");
+	}
+	else if(s.NetworkType == 1) //PPPOE问题
+	{
+		if(s.WanIp == 0)   //WAN口无IP
+		{
+			if(s.ErrorCode == "709")
+			{
+				$("#wan_error_span").html("账号密码错误或账号已欠费，请确认后重新输入！(error code:" + s.ErrorCode + ")");  //PPPOE密码太短或者不匹配
+			}
+			else if(s.ErrorCode == "691")
+			{
+				$("#wan_error_span").html("账号密码错误或账号已欠费，请确认后重新输入！(error code:" + s.ErrorCode + ")");  //PPPOE密码错误或者账号到期
+			}
+			else if(s.ErrorCode == "678")
+			{
+				$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！(error code:" + s.ErrorCode + ")");  //运营商服务器升级或者网线松动
+			}
+			else if(s.ErrorCode == "646" || s.ErrorCode == "647" || s.ErrorCode == "648" || s.ErrorCode == "649")
+			{
+				$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！(error code:" + s.ErrorCode + ")");  //PPPOE账号无法使用，错误代码XXX
+			}
+			else if(s.ErrorCode == "down" || s.ErrorCode == "1")
+			{
+				$("#wan_error_span").html("PPPoE正在重新拨号，请等待！");  //PPPOE正在拨号
+			}
+			else if(s.ErrorCode == "0")
+			{
+				$("#wan_error_span").html("宽带运营商服务器未响应，请联系宽带运营商！");  //PPPOE请求发出无响应
+			}
+		}
+		else   //WAN口有IP
+		{
+			if(s.PingWan == 0)  //不能PING通WAN侧网关IP
+			{
+				$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！");  //重启或MAC克隆
+			}
+			else  //能PING通WAN侧网关IP
+			{
+				if(s.DNS == 0)
+				{
+					$("#wan_error_span").html("未发现可用DNS，请配置DNS！");  //DNS地址不存在
+				}
+				else if(s.DNS == 1)
+				{
+					$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！");  // DNS地址存在
+				}
+				else
+				{
+					$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！");  // DNS地址自定义
+				}
+			}
+		}
+	}
+	else   //DHCP问题
+	{
+		if(s.WanIp == 0)  //WAN口无IP
+		{
+			$("#wan_error_span").html("无法自动获取IP地址，请确认上联设备的DHCP服务是否打开！");  //DHCP问题
+		}
+		else   //WAN口有IP
+		{
+			if(s.PingWan == 0)  //不能PING通WAN侧网关IP
+			{
+				$("#wan_error_span").html("DHCP服务异常！");  //重启或MAC克隆
+			}
+			else  //能PING通WAN侧网关IP
+			{
+				if(s.DNS == 0)
+				{
+					$("#wan_error_span").html("未发现可用DNS，请配置DNS！");  //DNS地址不存在
+				}
+				else if(s.DNS == 1)
+				{
+					$("#wan_error_span").html("DHCP服务异常！");  // DNS地址存在
+				}
+				else
+				{
+					$("#wan_error_span").html("DHCP服务异常！");  // DNS地址自定义
+				}
+			}
+		}
+	}
+}
+
+function wan_link_judge()
+{
+	$.ajax({
+	type:"post",
+	url:"/LocalNetworkSet.asp?action=get",
+	success:function(s, other) {
+		if(s[0].phy_connect == 1)
+		{
+			network_sys_error_2(s[1]);
+		}
+		else
+		{
+			$("#wan_error_span").html("检测到WAN口网线未正常连接，请检查！");
+		}
+		}});
+}
+
+function get_inet_link(callback)
+{
+	$.ajax({
+	type:"post",
+	url:"/LocalCheckInetLinkStatus.asp?action=get",
+	success:function(s, other) {
+			if(s.inet_link == 1)
+			{
+				if(callback.up) {
+					callback.up();
+				}
+				$("#downcode").show();
+			} else {
+				if(callback.down) {
+					callback.down();
+				}
+				$("#downcode").hide();
+			}
+		}});
+}
+
+function check_network()
+{
+	get_inet_link({
+		"up":function(){
+			fun_sys_error_8();
+		},
+		"down":function(){
+			wan_link_judge();
+		}
+	});
+	setTimeout("check_network()", 3000);
+}
+</script>
+</html>    
+
+
+

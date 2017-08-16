@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/i18n/light.zh-cn.lmo
+/usr/lib/lua/luci/view/indicatorlight.htm
+/usr/lib/lua/luci/controller/admin/indicatorlight.lua

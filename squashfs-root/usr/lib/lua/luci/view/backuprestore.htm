@@ -1,0 +1,171 @@
+<%+header%>
+<% require "luci.phicommproduct" %>
+<fieldset>
+    <div class="setcontent advanced">
+        <div class="title-span">
+            <%:backup and recover%>
+        </div>
+        <div class="title-underline"></div>
+        <!-- 备份与恢复页面第一部分-备份配置 -->
+        <form method="post" name="backup_config" action="<%=REQUEST_URI%>" enctype="multipart/form-data">
+            <div class="setlinediv margintop-40" id="downloadfile">
+                <span class="link-span3">
+                    <%:current version%>
+                </span>
+                <span class="info-span">
+                    <%=pcdata(luci.phicommproduct.softversion)%>
+                </span>                
+            </div>
+            <div class="setlinediv margintop-15" style="height: 34px;">
+                <div class="button-square-lg btndiv" id="savedownload"><%:backup and config%></div>                
+            </div>
+            <div class="setlinediv margintop-30" style="height: 40px;">
+                <span class="explain-span1"><%:annotation%><p><%:backup and config description%></p></span>
+                <input class="button-square-lg bg-orange" style="display:none" name="backup" value="<%:Generate archive%>">
+            </div>
+        </form>
+        <div class="title-underline underline-margin opacity-underline"></div>
+        <!-- 备份与恢复页面第二部分-恢复备份 -->
+        <form method="post" name="restore_config" action="<%=REQUEST_URI%>" enctype="multipart/form-data" onsubmit="return cbi_validate_form(this, null,showerror)">
+            <div class="setlinediv margintop-30">
+                <span class="link-span3"><%:recover config file%></span>
+                <input type="text" id="Setfile_road" class="input-text input-large" readonly="readonly" />
+                <input type="file" class="input-file height-40" id="Setfilename" name="restore" onchange="file_value(this,'Setfile_road')"/>
+                <script type="text/javascript">
+                    cbi_validate_field('Setfilename', false, 'filename', '<%:recover file%>:', error_msg);
+                </script>                
+                <div class="icon-browse color-orange icon-div" style="margin-left: -50px;"></div>
+                <div>
+                    <span class="color-orange" style="float: left;margin-top: 4px;margin-left: -23px;"><%:browse%></span>    
+                </div>                                                                
+            </div>
+            <div class="setlinediv margintop-30" style="height: 34px;">
+                <div  type="button" class="button-square-lg btndiv" id="savesetfile" >
+                    <%:recover backup%>
+                </div>
+            </div>
+        </form>
+        <div class="title-underline underline-margin opacity-underline"></div>
+        <!-- 备份与恢复页面第三部分-恢复出厂设置 -->
+        <form method="post" name="reset_default" action="<%=REQUEST_URI%>" enctype="multipart/form-data">
+            <div class="setlinediv margintop-30" id="ImportSettings">
+                <div class="button-square-lg btndiv" id="Importbutton"><%:recover reset%></div>
+            </div>
+            <div class="setlinediv margintop-30">
+                <span class="explain-span1"><%:annotation%><p><%:recover reset description%></p></span>
+                <input class="big-button" style="display:none" name="reset" value="<%:Perform reset%>">
+            </div>
+        </form>
+        <button style="display:none" data-toggle="modal" data-target="#ProofModal1" id="paramcheck1"></button>
+            <div class="modal fade" id="ProofModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+                <div class="modal-dialog proof_modal_dialog" role="document">
+                    <div class="modal-content proof_modal_content">
+                        <span class="alert_msg" id="error_des1"></span>
+                        <div class="proof_button_div">
+                            <div class="btn proof_confirm_button"  id="btn_confirm_default" data-dismiss="modal" style="display:none">
+                                <span class="proof_button_span"><%:qckgd_confirm%></span>
+                            </div>
+                            <div class="btn proof_confirm_button"  id="btn_confirm_action"  style="display:none">
+                                <span class="proof_button_span"><%:backup and recover confirm%></span>
+                            </div>
+                            <div class="btn proof_confirm_button"  id="btn_cancel"  data-dismiss="modal" style="display:none">
+                                <span class="proof_button_span"><%:backup and recover cancel%></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <script type="text/javascript">
+            function file_value(obj, text_id) {
+                var p = obj.value;
+                var lastindex = p.lastIndexOf("\\");
+                $("#"+text_id).val((p.substring(lastindex+1)));
+            }
+
+            function hideModal(){                
+                $("#wan_check_modal").modal("hide");
+            }
+
+            $(function() {
+                    $("#img_downbutton").click(function(){
+                        document.getElementById("Setfilename").click();    
+                    });
+
+                    $("#savedownload").click(function() {
+                        $("#wan_check_modal").find(".loading_msg_span").html("备份配置中...");
+                        $("#wan_check_modal").modal("show");
+                        document.backup_config.submit();
+                        setTimeout("hideModal()",5000);
+                    });
+
+                    $("#savesetfile").click(function() {//上传备份
+                        var str = document.restore_config.restore.value;
+                        if (str == "") {
+                            $("#error_des1").html("<%:config file is null warning%>!");
+                            $("#paramcheck1").click();
+                            $("#btn_confirm_default").show();
+                            $("#btn_confirm_action").hide();
+                            $("#btn_cancel").hide();
+                            return false;
+                        }
+                        if ((str.toLowerCase().charAt(str.length-4) != '.')
+                           || (str.toLowerCase().charAt(str.length-3) != 'd')
+                           || (str.toLowerCase().charAt(str.length-2) != 'a')
+                           || (str.toLowerCase().charAt(str.length-1) != 't')) {
+                        
+                            $("#error_des1").html("<%:upload file is illegal warning%>!");
+                            $("#paramcheck1").click();
+                            $("#btn_confirm_default").show();
+                            $("#btn_confirm_action").hide();
+                            $("#btn_cancel").hide();
+                            return false;
+                        }
+                        document.restore_config.submit();
+                    });
+
+                    $("#Importbutton").click(function() {//恢复出厂设置
+                        $("#error_des1").html("<%:recover reset warning%>!");
+                        $("#paramcheck1").click();
+                        $("#btn_confirm_default").hide();
+                        $("#btn_confirm_action").show();
+                        $("#btn_cancel").show();
+                    });
+
+                    $("#btn_confirm_action").click(function() {
+                            document.reset_default.submit();
+                            return true;
+                    });
+            });
+        </script>
+        <% if restore_error_message then %>
+            <script type="text/javascript">
+                $(function() {
+                        $("#error_des1").html("<%:config file is error%>!");
+                        $("#paramcheck1").click();
+                        $("#btn_confirm_default").show();
+                });
+            </script>
+        <% elseif reset_process then %>
+            <script type="text/javascript">
+                $(function() {
+                        start_progress_bar(68);
+                });
+            </script>
+        <% elseif restore_avail then %>
+            <script type="text/javascript">
+                $(function() {
+                    start_progress_bar(68);
+                });
+            </script>
+        <% elseif restore_error_fwversion then %>
+            <script type="text/javascript">
+                $(function() {
+                        $("#error_des1").html("<%:config version too low%>!");
+                        $("#paramcheck1").click();
+                        $("#btn_confirm_default").show();
+                });
+            </script>
+        <% end %>
+    </div>
+</fieldset>
+<%+footer%>

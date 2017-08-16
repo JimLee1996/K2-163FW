@@ -1,0 +1,4 @@
+/usr/lib/lua/luci/controller/admin/lanset.lua
+/usr/lib/lua/luci/i18n/lanset.zh-cn.lmo
+/etc/nvram2uci/lanset
+/usr/lib/lua/luci/view/lanset/lanset.htm

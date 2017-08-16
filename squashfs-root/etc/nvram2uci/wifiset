@@ -1,0 +1,168 @@
+#!/bin/sh 
+. /lib/functions/nvram2uci.sh
+####################
+#2.4G  -mt7620 device
+####################
+echo "==>start to check wifiset nvram."
+dev2gflag='band=2.4G'
+dev2g=`uci show wireless | grep ${dev2gflag}`
+dev2g=${dev2g#*.}
+dev2g=${dev2g%%.*}
+echo "2.4G device is ${dev2g}"
+#band width
+HT_BW=`nvram get linux HT_BW`
+if [ $HT_BW = "2" ]
+then
+	uci set wireless.${dev2g}.ht_bsscoexist="1"
+else
+	uci set wireless.${dev2g}.ht_bsscoexist="0"
+fi
+uci set wireless.${dev2g}.bw=${HT_BW}	#0:20 1:40 2:20/40
+#Channel
+channel_apcli=`nvram get linux ApCliChannel`
+enable_apcli=`nvram get linux ApCliEnable`
+if [ $enable_apcli = "1" -a "x${channel_apcli}" != "x" ]
+then
+	uci set wireless.${dev2g}.channel = ${channel_apcli}
+else
+	nvram2uci Channel wireless.${dev2g}.channel
+fi
+#autoch
+#nvram2uci AutoChannelSelect wireless.${dev2g}.autoch
+#NoForwarding
+nvram2uci NoForwarding wireless.${dev2g}.noforward
+#Wifimode
+nvram2uci WirelessMode wireless.${dev2g}.wifimode
+####################
+#ra0  2.4G interface.
+####################
+iface0='ifname=ra0'
+iface0=`uci show wireless | grep ${iface0}`
+iface0=${iface0#*.}
+iface0=${iface0%%.*}
+#switch
+RadioOn=`nvram get linux RadioOn`
+if [ $RadioOn = "1" ]
+then
+	RadioOn="0"
+else
+	RadioOn="1"
+fi
+uci set wireless.${iface0}.disabled=$RadioOn
+#SSID
+nvram2uci SSID1 wireless.${iface0}.ssid
+#key
+nvram2uci WPAPSK1 wireless.${iface0}.key
+#encryption
+encryption=`nvram get linux AuthMode`
+if [ ${encryption} = "WPAPSKWPA2PSK" ]
+then
+	uci set wireless.${iface0}.encryption="psk-mixed+tkip+ccmp"
+else
+	uci set wireless.${iface0}.encryption="none"
+fi
+#hidden
+nvram2uci HideSSID	wireless.${iface0}.hidden
+####################
+#ra1  guest network.
+####################
+iface1='ifname=ra1'
+iface1=`uci show wireless | grep ${iface1}`
+iface1=${iface1#*.}
+iface1=${iface1%%.*}
+#switch
+RadioOn=`nvram get linux RadioOn`
+if [ $RadioOn = "1" ]
+then
+	RadioOn="0"
+else
+	RadioOn="1"
+fi
+uci set wireless.${iface1}.disabled=$RadioOn
+nvram2uci vis_ssid wireless.${iface1}.ssid
+nvram2uci vis_ssid_pwd wireless.${iface1}.key
+#encryption
+encryption=`nvram get linux vis_ssid_AuthMode`
+if [ ${encryption} = "WPAPSKWPA2PSK" ]
+then
+	uci set wireless.${iface1}.encryption="psk-mixed+tkip+ccmp"
+else
+	uci set wireless.${iface1}.encryption="none"
+fi
+enable=`nvram get linux vis_ssid_enable`
+if [ $enable = "1" ]
+then
+	enable="0"
+else
+	enable="1"
+fi
+uci set wireless.${iface1}.disabled=$enable
+####################
+#5G -mt7612e device
+####################
+dev5gflag='band=5G'
+dev5g=`uci show wireless | grep ${dev5gflag}`
+dev5g=${dev5g#*.}
+dev5g=${dev5g%%.*}
+echo "5G device is ${dev5g}"
+#band width	#0:20 1:20/40 2:80
+inicHT_BW=`nvram get linux inic_HT_BW`
+if [ $inicHT_BW = "1" ]
+then
+	uci set wireless.${dev5g}.ht_bsscoexist="1"
+else
+	uci set wireless.${dev5g}.ht_bsscoexist="0"
+fi
+inicVHT_BW=`nvram get linux inic_VHT_BW`
+if [ ${inicVHT_BW} = "1" ]
+then
+	uci set wireless.${dev5g}.bw=2
+else 
+	uci set wireless.${dev5g}.bw=${inicHT_BW}
+fi
+#Channel
+channel_apcli=`nvram get linux inic_ApCliChannel`
+enable_apcli=`nvram get linux inic_ApCliEnable`
+if [ $enable_apcli = "1" -a "x${channel_apcli}" !="x"  ]
+then
+	uci set wireless.${dev5g}.channel=${channel_apcli}
+else
+	nvram2uci inic_Channel wireless.${dev5g}.channel
+fi
+#autoch
+#nvram2uci inic_AutoChannelSelect wireless.${dev5g}.autoch
+#NoForwarding
+nvram2uci inic_NoForwarding wireless.${dev5g}.noforward
+#Wifimode
+nvram2uci inic_WirelessMode wireless.${dev5g}.wifimode
+
+####################
+#5G -rai0 interface
+####################
+iface0='ifname=rai0'
+iface0=`uci show wireless | grep ${iface0}`
+iface0=${iface0#*.}
+iface0=${iface0%%.*}
+#switch
+inicRadioOn=`nvram get linux inic_RadioOn`
+if [ $inicRadioOn = "1" ]
+then
+	inicRadioOn="0"
+else
+	inicRadioOn="1"
+fi
+uci set wireless.${iface0}.disabled=$inicRadioOn
+nvram2uci inic_SSID1 wireless.${iface0}.ssid
+nvram2uci inic_WPAPSK1 wireless.${iface0}.key
+nvram2uci inic_HideSSID wireless.${iface0}.hidden
+#encryption
+encryption=`nvram get linux inic_AuthMode`
+if [ ${encryption} = "WPAPSKWPA2PSK" ]
+then
+	uci set wireless.${iface0}.encryption="psk-mixed+tkip+ccmp"
+else
+	uci set wireless.${iface0}.encryption="none"
+fi
+
+uci commit
+echo "<==end of check wifiset nvram."

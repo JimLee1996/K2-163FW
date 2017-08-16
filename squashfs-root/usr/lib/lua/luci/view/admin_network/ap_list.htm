@@ -1,0 +1,243 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2009 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id$
+
+-%>
+
+<%-
+
+	local sys = require "luci.sys"
+	local utl = require "luci.util"
+	local apcli_lua = require "apcli"
+	local s2 = {}
+	local s5 = {}
+	function new_scanlist()
+		local k, v
+		local l= {}
+		for k, v in ipairs(apcli_lua.get_ap_list("2.4&5") or { }) do
+			if v.aptype == 1 then
+				s2[#s2+1] = v
+			elseif v.aptype == 2 then
+				s5[#s5+1] = v
+			end
+		end
+		return 0
+	end
+	function new_scanlist_2g()
+		local k, v
+		local l = { }
+		local s2 = { }
+
+		for k, v in ipairs(apcli_lua.get_ap_list("2.4G") or { }) do
+			if not s2[v.bssid] then
+				l[#l+1] = v
+				s2[v.bssid] = true
+			end
+		end
+		return l
+	end
+	function new_scanlist_5g()
+		local k, v
+		local l = { }
+		local s5 = { }
+		for k, v in ipairs(apcli_lua.get_ap_list("5G") or {}) do
+			if not s5[v.bssid] then
+				l[#l+1] = v
+				s5[v.bssid] = true
+			end
+		end
+		return l
+	end
+-%>
+
+<!--8765323785174634734-->
+<script type="text/javascript" src="/luci-static/bootstrap/js/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+	  	$(function(){
+  		$('.content').niceScroll({
+  			cursorcolor: "#CCCCCC",
+  			cursoropacitymax: 1, 
+  			touchbehavior: false, 
+  			cursorwidth: "5px", 
+  			cursorborder: "0", 
+  			cursorborderradius: "5px",
+  			autohidemode: false 
+  		});
+  	});
+
+</script>
+		<% new_scanlist() %>
+		<% l = s2 or {}  if #l ~= 0 then  %>
+		<div class="margin-left-right10 height-31">
+			<span class="content-span color-orange">2.4G WiFi列表</span>
+		</div>
+
+		<div class="margin-left-right10 content wirlistdiv">
+         <table frame="hsides">
+            <tr class="height-31">
+                 <th>SSID</th>
+                 <th>MAC地址</th>
+                 <th class="hide">加密类型</th>
+                 <th class="hide">信道</th>
+                 <th>信号强度</th>
+				 <th>选择</th>
+                 <th class="hide">算法</th>
+            </tr>
+
+            <% for i, net in ipairs(l) do number_2 = tonumber(i) %>
+			<tr value="<%=i%>">
+                 
+                 <td id="ssid<%=i%>" class="ssid" style="text-align: left;padding-left: 10px;" title="<%=net.ssid%>">
+                 	<input readonly="readonly" style="width: 141px;border: none;" value="" />
+                 	<script type="text/javascript">
+                 		var ss = "<%=apcli_lua.url_encode(net.ssid)%>";
+                 		$("#ssid<%=i%> input").val(ss);
+                 	</script>
+                 </td>
+                 <td id="mac<%=i%>" class="mac" style="text-align: left;padding-left: 10px;"><%=net.bssid%></td>
+                 <td id="aptype<%=i%>" class="aptype hide"><%=net.aptype%></td>
+                 <td id="pwd_type<%=i%>" class="pwdtype hide"><%=net.authmode%></td>
+				 <td id="channel<%=i%>" class="hide channel"><%=net.channel%></td>
+                 <td id="signal<%=i%>">
+                 <% if net.quality < 25 then%>
+                 	<img src="<%=media%>/images/icon_signalone.png" />
+                 <% elseif net.quality < 50 then %>
+                 	<img src="<%=media%>/images/icon_signaltwo.png" />
+                 <% elseif net.quality < 75 then %>
+                 	<img src="<%=media%>/images/icon_signalthree.png" />
+                 <% else%>
+                 	<img src="<%=media%>/images/icon_signalfour.png" />
+                 <%end%>
+                 </td> 
+				 <td ><a id="check<%=i%>" class="wl_connect" data-dismiss="modal">连接</a></td> 
+				 <td id="encryp<%=i%>" class="hide encryp"><%=net.security or ""%></td>
+            </tr>
+			<% end %>
+
+		</table>
+		</div>
+		<% else number_2=0 %>
+				<div class="margin-left-right10 height-31">
+					<span class="content-span color-orange">2.4G无线列表获取失败，请确认2.4G无线是否打开</span>
+				</div>
+		<% end %>
+		<%  l = s5 or {}  if #l ~= 0  then %>
+	    <div class="margin-left-right10 height-31 margintop-15">
+			<span class="content-span color-orange">5G WiFi列表</span>
+		</div>
+
+		<div class="margin-left-right10 content wirlistdiv">	
+		<table frame="hsides">	
+            <tr class="height-31">
+                 <th>SSID</th>
+                 <th>MAC地址</th>
+                 <th class="hide">加密类型</th>
+                 <th class="hide">信道</th>
+                 <th>信号强度</th>
+				 <th>选择</th>
+                 <th class="hide">算法</th>
+            </tr>
+			<% for i, net in ipairs(l) do number_5 = tonumber(i) %>
+			<tr>
+                 
+                 <td id="ssid<%=number_2+i%>" class="ssid" style="text-align: left;padding-left: 10px;" title="<%=net.ssid%>">
+                 	<input readonly="readonly" style="width: 141px;border: none;" value="" />
+                 	<script type="text/javascript">
+                 		var ss = "<%=apcli_lua.url_encode(net.ssid)%>";
+                 		$("#ssid<%=number_2+i%> input").val(ss);
+                 	</script>
+                 </td>
+                 <td id="mac<%=number_2+i%>" class="mac" style="text-align: left;padding-left: 10px;"><%=net.bssid%></td>
+                 <td id="aptype<%=i%>" class="aptype hide"><%=net.aptype%></td>
+                 <td id="pwd_type<%=number_2+i%>" class="hide pwdtype"><%=net.authmode%></td>
+				 <td id="channel<%=number_2+i%>" class="channel hide"><%=net.channel%></td> 
+                 <td id="signal<%=number_2+i%>">
+                 <% if net.quality < 25 then%>
+                 	<img src="<%=media%>/images/icon_signalone.png" />
+                 <% elseif net.quality < 50 then %>
+                 	<img src="<%=media%>/images/icon_signaltwo.png" />
+                 <% elseif net.quality < 75 then %>
+                 	<img src="<%=media%>/images/icon_signalthree.png" />
+                 <% else%>
+                 	<img src="<%=media%>/images/icon_signalfour.png" />
+                 <%end%>                 
+                 </td> 
+				 <td ><a id="check<%=number_2+i%>" class="wl_connect" data-dismiss="modal">连接</a></td> 
+				 <td id="encryp<%=number_2+i%>" class="hide encryp"><%=net.security or ""%></td>
+            </tr>
+			<% end %>
+
+		</table>
+		</div>
+		<% else %>
+			<div class="margin-left-right10 height-31">
+				<span class="content-span color-orange">5G无线列表获取失败，请确认5G无线是否打开</span>
+			</div>
+		<% end %>
+
+            <script type="text/javascript">
+            $(".wl_connect").click(function(){
+			var listNum = $(this).parents("tr").attr("value");
+			var ssid = $(this).parents("tr").find("input").val();
+			var mac = $(this).parents("tr").find(".mac").html();
+			var pwd_type = $(this).parents("tr").find(".pwdtype").html();
+			var channel = $(this).parents("tr").find(".channel").html();
+			var aptype = $(this).parents("tr").find(".aptype").html();
+			var encryp = $(this).parents("tr").find(".encryp").html();
+
+			if((pwd_type.indexOf("WPA")>=0 && pwd_type.indexOf("PSK")<0 )|| pwd_type.indexOf("WEP")>=0)
+			{
+				$("#wltd_md_error_special").modal("show");
+				return true;
+			}
+
+			$("input[name=apcli_bssid]").val(mac);
+			$("input[name=apcli_channel]").val(channel);
+			$("input[name=apcli_aptype]").val(aptype);
+			$("input[name=wir_ssid]").val(ssid);
+			if(pwd_type.indexOf("WPAPSKWPA2PSK") >= 0){
+				$("#safeselectbody input").val("WPA2-PSK")
+				$("#safeselectbody input[name=safeSelect]").val("WPA2PSK")
+				$("#safeselectbody").hide()
+				$("#encselectbody").hide()
+				$("#wisp_passwd").show()
+			}
+			else if(pwd_type.indexOf("WPA2PSK") >= 0){
+				$("#safeselectbody input").val("WPA2-PSK")
+				$("#safeselectbody input[name=safeSelect]").val("WPA2PSK")
+				$("#safeselectbody").hide()
+				$("#encselectbody").hide()
+				$("#wisp_passwd").show()
+			}
+			else if(pwd_type.indexOf("WPAPSK") >= 0){
+				$("#safeselectbody input").val("WPA-PSK")
+				$("#safeselectbody input[name=safeSelect]").val("WPAPSK")
+				$("#safeselectbody").hide()
+				$("#encselectbody").hide()
+				$("#wisp_passwd").show()
+			}
+			else{
+				$("#safeselectbody input").val("OPEN")
+				$("#safeselectbody input[name=safeSelect]").val("OPEN")
+				$("#safeselectbody").hide()
+				$("#encselectbody").hide()
+				$("#wisp_passwd").hide()
+			}
+
+			if(encryp.indexOf("AES") >= 0){
+				$("#encselectbody input").val("AES")
+			}
+			else if(encryp.indexOf("TKIP") >=0 ){
+				$("#encselectbody input").val("TKIP")
+			}
+            	});
+            </script>
+

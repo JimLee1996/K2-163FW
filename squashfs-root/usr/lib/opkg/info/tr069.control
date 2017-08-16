@@ -1,0 +1,8 @@
+Package: tr069
+Version: 1
+Depends: libc, libuci, libnl-tiny, libubus, ubus, ubusd, jshn, libubox
+Source: package/phicomm/tr069
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 70321
+Description:  tr069 mode start

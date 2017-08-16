@@ -1,0 +1,16 @@
+#!/bin/sh
+. /lib/functions.sh
+. /lib/functions/nvram2uci.sh
+
+echo "==>start to check quickguide"
+
+#清除恢复出厂标记
+uci set luci.main.firststart=0
+firstconfig=`nvram get linux first_config`
+uci set luci.main.first_config=$firstconfig
+uci commit luci.main
+
+#清除域名劫持
+uci del dhcp.welcome
+uci commit dhcp
+ 

@@ -1,0 +1,233 @@
+<%- if firstmap and messages then local msg; for _, msg in ipairs(messages) do -%>
+    <div class="errorbox"><%=pcdata(msg)%></div>
+<%- end end -%>
+
+<%-+cbi/apply_xhr-%>
+
+<% if self.idname == "wifiset" or self.idname == "wanset" then %>
+         <div class="row list_row_div">
+        <div class="col-md-1 col-xs-1" ></div>
+        <div class="col-md-10 col-xs-10 list_col-md-10">
+            <div class="list_body_div list_body_width">
+<% end %>
+
+<div <% if self.addclass then %> class="<%=self.addclass%>" <%else%> class="setcontent" <% end %> id="cbi-<%=self.config%>">
+    <% if self.title and #self.title > 0 then %>
+        <div class="title_span" <% if self.mapcenterclass then %> style="padding-left:47%" <% end %>>
+        <span><%=self.title%></span>
+    </div>
+        <div <% if self.config=="wireless" or (self.config=="network" and self.section=="wan")  then %> class="title_underline" <% else %> class="title_underline_advance" <%end%> ></div>
+    <% end %>
+    <% if self.description and #self.description > 0 then %><div class="cbi-map-descr"><%=self.description%></div><% end %>
+    <% if self.wanconnect then %>
+    <div class="wan_link" id="wan_link_err">
+        <span class="wan_set_link_icon_span" id="wan_set_link_icon"></span>
+        <span class="wan_set_link_msg_span" id="wan_error_span"></span>
+    </div>
+    <div>
+        <%end%>
+    <%- if firstmap and applymap then cbi_apply_xhr(self.config, parsechain, redirect) end -%>
+    <%- self:render_children() %>
+</div>
+
+<% if self.wanconnect then %>
+<script type="text/javascript">//<![CDATA[
+<%
+        local uci = uci.cursor()
+%>
+var opmode = "<%=uci:get("network", "wan", "ifname") %>";
+
+function network_sys_error_2(s)
+{
+				if(s.NetworkType == 2)  //静态IP问题
+				{
+					$("#wan_link_err").show();
+					$("#wan_set_link_icon").removeClass("icon-connect");
+					$("#wan_set_link_icon").addClass("icon-break");
+					$("#wan_set_link_icon").css("color","#FF0000");
+					$("#wan_error_span").html("网络异常，建议一键体检！");
+				}
+				else if(s.NetworkType == 1) //PPPOE问题
+				{
+					if(s.WanIp == 0)   //WAN口无IP
+					{
+						if(s.ErrorCode == "709")
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("账号密码错误或账号已欠费，请确认后重新输入！(error code:" + s.ErrorCode + ")");  //PPPOE密码太短或者不匹配
+						}
+						else if(s.ErrorCode == "691")
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("账号密码错误或账号已欠费，请确认后重新输入！(error code:" + s.ErrorCode + ")");  //PPPOE密码错误或者账号到期
+						}
+						else if(s.ErrorCode == "678")
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！(error code:" + s.ErrorCode + ")");  //运营商服务器升级或者网线松动
+						}
+						else if(s.ErrorCode == "646" || s.ErrorCode == "647" || s.ErrorCode == "648" || s.ErrorCode == "649")
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！(error code:" + s.ErrorCode + ")");  //PPPOE账号无法使用，错误代码XXX
+						}
+						else if(s.ErrorCode == "down" || s.ErrorCode == "1")
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("PPPoE正在重新拨号，请等待！");  //PPPOE正在拨号
+						}
+						else if(s.ErrorCode == "0")
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("宽带运营商服务器未响应，请联系宽带运营商！");  //PPPOE请求发出无响应
+						}
+					}
+					else   //WAN口有IP
+					{
+						if(s.PingWan == 0)  //不能PING通WAN侧网关IP
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！");  //重启或MAC克隆
+						}
+						else  //能PING通WAN侧网关IP
+						{
+							if(s.DNS == 0)
+							{
+								$("#wan_link_err").show();
+								$("#wan_set_link_icon").removeClass("icon-connect");
+								$("#wan_set_link_icon").addClass("icon-break");
+								$("#wan_set_link_icon").css("color","#FF0000");
+								$("#wan_error_span").html("未发现可用DNS，请配置DNS！");  //DNS地址不存在
+							}
+							else if(s.DNS == 1)
+							{
+								$("#wan_link_err").show();
+								$("#wan_set_link_icon").removeClass("icon-connect");
+								$("#wan_set_link_icon").addClass("icon-break");
+								$("#wan_set_link_icon").css("color","#FF0000");
+								$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！");  // DNS地址存在
+							}
+							else
+							{
+								$("#wan_link_err").show();
+								$("#wan_set_link_icon").removeClass("icon-connect");
+								$("#wan_set_link_icon").addClass("icon-break");
+								$("#wan_set_link_icon").css("color","#FF0000");
+								$("#wan_error_span").html("宽带运营商服务器异常，请联系宽带运营商！");  // DNS地址自定义
+							}
+						}
+					}
+				}
+				else   //DHCP问题
+				{
+					if(s.WanIp == 0)  //WAN口无IP
+					{
+						$("#wan_link_err").show();
+						$("#wan_set_link_icon").removeClass("icon-connect");
+						$("#wan_set_link_icon").addClass("icon-break");
+						$("#wan_set_link_icon").css("color","#FF0000");
+						$("#wan_error_span").html("无法自动获取IP地址，请确认上联设备的DHCP服务是否打开！");  //DHCP问题
+					}
+					else   //WAN口有IP
+					{
+						if(s.PingWan == 0)  //不能PING通WAN侧网关IP
+
+						{
+							$("#wan_link_err").show();
+							$("#wan_set_link_icon").removeClass("icon-connect");
+							$("#wan_set_link_icon").addClass("icon-break");
+							$("#wan_set_link_icon").css("color","#FF0000");
+							$("#wan_error_span").html("DHCP服务异常，建议一键体检！");  //重启或MAC克隆
+						}
+						else  //能PING通WAN侧网关IP
+						{
+							if(s.DNS == 0)
+							{
+								$("#wan_link_err").show();
+								$("#wan_set_link_icon").removeClass("icon-connect");
+								$("#wan_set_link_icon").addClass("icon-break");
+								$("#wan_set_link_icon").css("color","#FF0000");
+								$("#wan_error_span").html("未发现可用DNS，请配置DNS！");  //DNS地址不存在
+							}
+							else if(s.DNS == 1)
+							{
+								$("#wan_link_err").show();
+								$("#wan_set_link_icon").removeClass("icon-connect");
+								$("#wan_set_link_icon").addClass("icon-break");
+								$("#wan_set_link_icon").css("color","#FF0000");
+								$("#wan_error_span").html("DHCP服务异常，建议一键体检！");  // DNS地址存在
+							}
+							else
+							{
+								$("#wan_link_err").show();
+								$("#wan_set_link_icon").removeClass("icon-connect");
+								$("#wan_set_link_icon").addClass("icon-break");
+								$("#wan_set_link_icon").css("color","#FF0000");
+								$("#wan_error_span").html("DHCP服务异常，建议一键体检！");  // DNS地址自定义
+							}
+						}
+					}
+				}
+}
+function fun_sys_error_8()
+{
+	if(opmode == "apcli0" || opmode == "apclii0") //wisp
+    {
+        $("#wan_detect_status").hide();
+    }
+    else
+    {
+		$("#wan_detect_status").show();
+    }
+	
+	$("#wan_link_err").show();
+	$("#wan_set_link_icon").removeClass("icon-break");
+	$("#wan_set_link_icon").addClass("icon-connect");
+	$("#wan_set_link_icon").css("color","#319633");
+	$("#wan_error_span").html("WAN口已连接！");
+}
+
+function wan_link_judge()
+{
+	$.ajax({
+	type:"post",
+	url:"/LocalNetworkSet.asp?action=get",
+	success:function(s, other) {
+		    if(s[0].phy_connect == 1)
+		    {
+				network_sys_error_2(s[1]);
+		    }
+		    else
+		    {
+				$("#wan_link_err").show();
+				$("#wan_set_link_icon").removeClass("icon-connect");
+				$("#wan_set_link_icon").addClass("icon-break");
+				$("#wan_set_link_icon").css("color","#FF0000");
+				$("#wan_error_span").html("检测到WAN口网线未正常连接，请检查！");
+			}
+			}});
+} 
+        //]]>
+</script>
+<% end %>

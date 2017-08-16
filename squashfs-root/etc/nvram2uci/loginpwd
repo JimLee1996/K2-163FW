@@ -1,0 +1,8 @@
+#!/bin/sh 
+. /lib/functions/nvram2uci.sh
+
+loginPwd=`nvram get linux http_passwd`
+
+if [ -n "$loginPwd" ]; then
+    nvram2uci http_passwd system.weblogin.password
+fi

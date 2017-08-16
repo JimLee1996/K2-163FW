@@ -1,0 +1,8 @@
+#!/bin/sh 
+. /lib/functions/nvram2uci.sh
+
+hw_ver=`nvram get linux hw_ver`
+
+if [ -n "$hw_ver" ]; then
+    nvram2uci hw_ver system.system.hw_ver
+fi

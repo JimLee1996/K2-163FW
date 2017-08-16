@@ -1,0 +1,5 @@
+/usr/lib/lua/luci/controller/admin/wlextend.lua
+/usr/lib/lua/luci/view/admin_network/wlextend.htm
+/usr/lib/lua/luci/i18n/wlextend.zh-cn.lmo
+/usr/lib/lua/luci/view/admin_network/ap_list.htm
+/etc/nvram2uci/wlextend

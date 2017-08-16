@@ -1,0 +1,165 @@
+<%#
+Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+
+DISCREPTION   : LuCI - Lua Configuration Interface - quick guide support
+AUTHOR        :     xiangjun.fu <    xiangjun.fu@phicomm.com.cn>
+CREATED DATE  : 2016-05-05
+MODIFIED DATE : 
+-%>
+
+<!DOCTYPE html>
+<html>
+<% 
+require "luci.phicommproduct"
+local uci_t = luci.model.uci.cursor() 
+local ssid = nil
+local inic_ssid = nil
+
+uci_t:foreach("wireless", "wifi-iface",
+function(s)
+if s.ifname == "ra0" then
+if s.ssid then
+ssid = s.ssid
+end
+end
+
+if s.ifname == "rai0" then
+if s.ssid then
+inic_ssid = s.ssid
+end
+end
+end)
+%>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no"/> 
+    <%+title%>
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/icon_fonts_style.css">
+    <link rel="stylesheet" href="<%=media%>/css/guide.css">
+    <script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/function.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+     <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+      <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="<%=media%>/js/html5shiv.js"></script>
+  <script src="<%=media%>/js/respond.min.js"></script>
+  <![endif]-->
+</head>
+<body class="content_body" oncontextmenu=self.event.returnValue=false>
+    <div class="guide_logo">
+            <img src="<%=media%>/images/logo_guide.png"/>
+            <span>快速向导</span>
+    </div>
+    <div class="guide_top_right">
+    </div>
+    <form method="post" name="quickguide_finish" action="<%=REQUEST_URI%>">
+        <div class="guide_finish_center">
+            <input name="chg2moreset" value="" type="hidden">
+            <div class="guide_wifi_message_div">
+                <span class="guide_wifi_message_span"><%:qckgd_wireless_finish%></span>
+                <div  style="margin-top: 20px;"><span class="network_break_msg_span">(互联网尚未接通，随时可以进入“<a href="<%=luci.dispatcher.build_url("admin", "networkset")%>">上网配置</a>”重新配置)</span></div>
+                <div><span class="network_connect_msg_span">（互联网已接通，可以开始上网了！）</span></div>
+            </div>
+            <div class="guide_circle_div">
+                <table class="guide_table" >
+                    <tr >
+                        <td >
+                            <div class="circle_div_1"></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_2"></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_3"></div>
+                            <div class="circle_div_4"><span>2.4G</span></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_2"></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_1"></div>
+                        </td>
+                        <td >
+                            <div class="circle_div_1"></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_2"></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_3"></div>
+                            <div class="circle_div_4"><span>5G</span></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_2"></div>
+                        </td>
+                        <td>
+                            <div class="circle_div_1"></div>
+                        </td>
+                    </tr>
+                    <tr class="wifi_ssid_tr" style="height: 10px;">
+                        <td colspan="5">
+                            <div><span><%=ssid%></span>
+                            </div>
+                        </td>
+                        <td colspan="5">
+                            <div><span><%=inic_ssid%></span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div style="padding-top: 15%;">
+                <button id="guide_more_set_bt" class="guide_bt" onclick="next_page()"><%:qckgd_more_set%></button>
+            </div>
+        </div>
+    </form>
+    <div class="guide_bottom_left">
+    </div>
+
+
+    <div class="guide_fotter">
+        <span class="hotline_span"><%:phicomm license%></span>
+        <span class="mac_span"><%:MAC Address%>：<%=uci_t:get("network","wan","macaddr")%></span>
+        <span class="software_version_span"><%:software version%>：<%=pcdata(luci.phicommproduct.softversion)%></span>
+    </div>
+      <div class="guide_qr_code_div">
+        <img src="<%=media%>/images/phico.png"/>
+        <span>更多功能，请扫描下载APP</span>
+    </div>
+
+</body>
+<script type="text/javascript">
+    function save()
+    {
+        document.quickguide_finish.submit();
+    }
+    function next_page()
+    {
+        document.quickguide_finish.chg2moreset.value = 1;
+        setTimeout("save()", 500);
+    }
+    
+    
+    XHR.poll(5,'<%=luci.dispatcher.build_url("admin", "index", "get_inet_status")%>',null,
+        function(x,s)      
+        {
+                if(s[0].inet_status)
+                {                       
+                    $(".network_break_msg_span").hide();    
+                    $(".network_connect_msg_span").show();
+                        
+                }        
+                else
+                { 
+                    $(".network_break_msg_span").show();    
+                    $(".network_connect_msg_span").hide();
+                }
+        }                    
+    );
+</script>
+</html>

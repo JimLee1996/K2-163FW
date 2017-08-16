@@ -1,0 +1,52 @@
+#!/bin/sh
+# Notice: $ACTION = ONLINE/OFFLINE; $IP; $MAC; $IFTYPE
+
+CONFIG="device_manage"
+TYPE="limit"
+section_name=${MAC//:/_}
+
+if [ "$TYPE" = "$(uci get $CONFIG.$section_name)" ]; then
+	tx_rate=$(uci get $CONFIG.$section_name.tx_rate)
+	rx_rate=$(uci get $CONFIG.$section_name.rx_rate)
+	if [ "$ACTION" = "ONLINE" ]; then
+		if_type=$(uci get $CONFIG.$section_name.if_type)
+		block_user=$(uci get $CONFIG.$section_name.block_user)
+		if [ $tx_rate -gt 0 ]; then
+			iptables -t mangle -w -A limit_chain --src $IP -m hashlimit --hashlimit-name src_$section_name \
+				--hashlimit ${tx_rate}kb/s --hashlimit-burst ${tx_rate}kb/s --hashlimit-mode srcip -j RETURN >/dev/null 2>&1
+			iptables -t mangle -w -A limit_chain --src $IP -j DROP >/dev/null 2>&1
+		fi
+		if [ $rx_rate -gt 0 ]; then
+			iptables -t mangle -w -A limit_chain --dst $IP -m hashlimit --hashlimit-name dst_$section_name \
+				--hashlimit ${rx_rate}kb/s --hashlimit-burst ${rx_rate}kb/s --hashlimit-mode dstip -j RETURN >/dev/null 2>&1
+			iptables -t mangle -w -A limit_chain --dst $IP -j DROP >/dev/null 2>&1
+		fi
+		if [ $if_type -eq 0 -a $IFTYPE -ne 0 ]; then
+			uci set $CONFIG.$section_name.if_type="$IFTYPE"
+			if [ $block_user -ne 0 ]; then
+				arptables -D INPUT --src-mac $MAC -j DROP
+				iwpriv ra0 set AccessPolicy=2
+				iwpriv rai0 set AccessPolicy=2
+				iwpriv ra0 set ACLAddEntry="$MAC"
+				iwpriv rai0 set ACLAddEntry="$MAC"
+				uci set wireless.mt7620.ac_policy=2
+				uci set wireless.mt7612e.ac_policy=2
+				uci add_list wireless.mt7620.ctrl_list="$MAC"
+				uci add_list wireless.mt7612e.ctrl_list="$MAC"
+			fi
+			uci commit wireless
+			uci commit $CONFIG
+		fi
+	elif [ "$ACTION" = "OFFLINE" ]; then
+		if [ $tx_rate -gt 0 ]; then
+			iptables -t mangle -w -D limit_chain --src $IP -m hashlimit --hashlimit-name src_$section_name \
+				--hashlimit ${tx_rate}kb/s --hashlimit-burst ${tx_rate}kb/s --hashlimit-mode srcip -j RETURN >/dev/null 2>&1
+			iptables -t mangle -w -D limit_chain --src $IP -j DROP >/dev/null 2>&1
+		fi
+		if [ $rx_rate -gt 0 ]; then
+			iptables -t mangle -w -D limit_chain --dst $IP -m hashlimit --hashlimit-name dst_$section_name \
+				--hashlimit ${rx_rate}kb/s --hashlimit-burst ${rx_rate}kb/s --hashlimit-mode dstip -j RETURN >/dev/null 2>&1
+			iptables -t mangle -w -D limit_chain --dst $IP -j DROP >/dev/null 2>&1
+		fi
+	fi
+fi

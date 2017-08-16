@@ -1,0 +1,11 @@
+Package: rp-pppoe-server
+Version: 3.11-1
+Depends: libc, ppp
+Source: package/phicomm/rp-pppoe
+Section: net
+Architecture: ramips_24kec
+Installed-Size: 33424
+Description:  Dubbed RP-PPPoE, this open-source product is ideal for Linux users with
+ a DSL "modem" whose Internet service provider uses PPPoE.
+ .
+ This package contains pppoe-server.

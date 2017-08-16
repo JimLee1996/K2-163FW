@@ -1,0 +1,8 @@
+/etc/init.d/portfwd
+/etc/hotplug.d/iface/71-appportfwd
+/etc/uci-defaults/luci-portfwd
+/etc/config/appportfwd
+/etc/nvram2uci/portfwd
+/usr/lib/lua/luci/view/appportfwd.htm
+/usr/lib/lua/luci/i18n/portfwd.zh-cn.lmo
+/usr/lib/lua/luci/controller/admin/appportfwdset.lua

@@ -1,0 +1,8 @@
+Package: kmod-mt7620
+Version: 3.10.14+p4rev-120998-1
+Depends: kernel (=3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137)
+Source: package/ramips/drivers/mt7620
+Section: kernel
+Architecture: ramips_24kec
+Installed-Size: 849356
+Description:  MTK MT7620 wifi AP driver

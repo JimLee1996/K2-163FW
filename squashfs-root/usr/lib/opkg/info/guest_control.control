@@ -1,0 +1,8 @@
+Package: guest_control
+Version: 1
+Depends: libc, libuci
+Source: package/phicomm/guest_control
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 4621
+Description:  guest network control.

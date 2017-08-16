@@ -1,0 +1,339 @@
+<%
+        local disp = require "luci.dispatcher"
+        local request = disp.context.request
+        local uci = uci.cursor()
+%>
+	<%- if pageaction then -%>
+	<div class="cbi-page-actions" <%if request[2]=='networkset' or request[2]=='wifiset' then%> style="width:80%;" <%end%>>
+
+	<% if flow.skip then %>
+	<input class="cbi-button cbi-button-skip" type="submit" name="cbi.skip" value="<%:Skip%>" />
+	<% end %>
+
+	<% if not autoapply and not flow.hideapplybtn and request[2] ~= "networkset" and request[2] ~= "wifiset" then %>
+		<input class=" cbi_save_button_advance " type="submit" name="cbi.apply" value="<%:Save%>"  />
+	<% end %>
+
+	<% if #request > 0 and request[2] == "networkset" then %>
+	<button type="button" class="cbi_save_button" id="networksetbt" ><%:Save%></button>
+	<script type="text/javascript">
+		$(function(){
+			check_network();
+			mywarn = setInterval("check_network()", 5000);
+
+			$("#networksetbt").click(function(){
+				if(cbi_validate_form(document.cbi, null, Alert))
+				{
+					if( $("input[name='cbid.network.wan.proto']:checked").val() == "static" )
+					{
+						var staticip = $("input[name='cbid.network.wan.ipaddr']").val();
+						var gateway = $("input[name='cbid.network.wan.gateway']").val();
+					
+						var ipv4mask = $("input[name='cbid.network.wan.netmask']").val();
+						if( ipv4mask == "255.255.255.255" )
+						{
+							Alert("<%:nerworkset_maskerror%>");
+							return false;
+						}
+						if(staticip == gateway)
+						{
+							Alert("<%:ipaddr_gateway_same%>");
+							return false;
+						}
+						var net1, net2;
+						net1 = get_network_id(staticip, ipv4mask);
+						net2 = get_network_id(gateway, ipv4mask);
+						if (net1[0]!=net2[0])
+						{
+							Alert("<%:nerworkset_different_segment%>");
+							return false;
+						}
+						var dns1, dsn2;
+						dns1 = $("input[name='cbid.network.wan.static_dns1']").val();
+						dns2 = $("input[name='cbid.network.wan.static_dns2']").val();
+						if(dns1 == dns2)
+						{
+							Alert("<%:networkset_dns_same%>");
+							return false;
+						}
+					}
+					else
+					{
+						var enable_adv = $("input[name='cbid.network.wan.enable_advance']").is(':checked');
+						if(enable_adv)
+						{
+							var dns_enable = $("input[name='cbid.network.wan.dns_opt']:checked").val()
+							if(dns_enable == 1)
+							{
+								var dns1 = $("input[name='cbid.network.wan.dns1']").val();
+								var dns2 = $("input[name='cbid.network.wan.dns2']").val();
+								if(dns1 == dns2)
+								{
+									Alert("<%:networkset_dns_same%>");
+									return false;
+								}
+							}
+						}
+					}
+					clearInterval(mywarn);
+					$("input[name='cbi.apply']").click();
+				}
+			});			
+
+		});
+	</script>
+	<% elseif #request > 0 and request[2] == "wifiset" then %>
+	<button type="button" class="cbi_save_button" id="wifisetbtn" ><%:Save%></button>
+	<!--modal-->
+	<div class="modal fade" id="wifiset_info_modal">
+	  <div class="modal-dialog alert_dialog">
+	    <div class="modal-content alert_content">
+	      <div class="color-gray">
+	        <span id="wifi_notice"></span>
+	        <span id="wifi_notice_question"></span>
+	        <button type="button" class="button-square-sm"  id="wifiset_confirm"><%:lanset_confirm%></button>
+	        <button type="button" class="button-square-sm" data-dismiss="modal" id="wifiset_cancel" style="background:#666666"><%:lanset cancle%></button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+	<script type="text/javascript">
+		$(function(){
+			var wps_status = "on";
+			var judge_status = "";
+			$("#wifisetbtn").click(function(){
+				if(cbi_validate_form(document.cbi, null, Alert))
+				{
+					judge_status = "wps";
+					var infostring = "";
+					var infostringquestion = "";
+					var radio2g = document.getElementById("2g_radio").checked != true;
+					var hidden2g = document.getElementById("2g_broadcast").checked == true;
+					var radio5g = document.getElementById("5g_radio").checked != true;
+					var hidden5g = document.getElementById("5g_broadcast").checked == true;
+					if( radio2g && radio5g){
+						infostring = "<%:wifiset_close%><%:wifiset_wireless%>，WPS<%:wifiset_disabled%>";
+						wps_status = "off";
+					} else if( radio2g && hidden5g){
+						infostring = "<%:wifiset_close%>2.4G<%:wifiset_wireless%><%:wifiset_and%><%:wifiset_hide%>5G<%:wifiset_wireless%>，WPS<%:wifiset_disabled%>";
+						wps_status = "off";
+					} else if( hidden2g && radio5g){
+						infostring = "<%:wifiset_hide%>2.4G<%:wifiset_wireless%><%:wifiset_and%><%:wifiset_close%>5G<%:wifiset_wireless%>，WPS<%:wifiset_disabled%>";
+						wps_status = "off";
+					} else if( hidden2g && hidden5g ){
+						infostring = "<%:wifiset_hide%><%:wifiset_wireless%>，WPS<%:wifiset_disabled%>";
+						wps_status = "off";
+					} else if( hidden2g ){
+						infostring = "<%:wifiset_hide%>2.4G<%:wifiset_wireless%>，2.4G WPS<%:wifiset_unconfig%>";
+						wps_status = "on";
+					} else if( hidden5g ){
+						infostring = "<%:wifiset_hide%>5G<%:wifiset_wireless%>，5G WPS<%:wifiset_unconfig%>";
+						wps_status = "on";
+					} else if( radio2g ){
+						infostring = "<%:wifiset_close%>2.4G<%:wifiset_wireless%>，2.4G WPS<%:wifiset_unconfig%>";
+						wps_status = "on";
+					} else if( radio5g ){
+						infostring = "<%:wifiset_close%>5G<%:wifiset_wireless%>，5G WPS<%:wifiset_unconfig%>";
+						wps_status = "on";
+					}
+					if(infostring == "")
+						$("#wifiset_confirm").click();
+					else
+					{
+						if (e = document.getElementById('wifi_notice'))
+							e.innerHTML = infostring;
+						if (e = document.getElementById('wifi_notice_question'))
+							e.innerHTML = infostringquestion;
+						$("#wifiset_info_modal").modal("show");
+					}
+				}
+			});
+			function judge_passwd(){
+				var infostring = "";
+				var infostringquestion = "";
+				judge_status = "wifipwd";
+				if("" == $("#2g_key").val() || "" == $("#5g_key").val()){
+					infostring = "2.4G或5G无线密码为空将会影响网络安全";
+					infostringquestion = "是否确认保存？";
+				}
+				if(infostring == "")
+					$("#wifiset_confirm").click();
+				else
+				{
+					if (e = document.getElementById('wifi_notice'))
+						e.innerHTML = infostring;
+					if (e = document.getElementById('wifi_notice_question'))
+						e.innerHTML = infostringquestion;
+					$("#wifiset_info_modal").modal("show");
+				}
+			};
+			$("#wifiset_confirm").click(function(){
+				if (judge_status == "wifipwd"){
+					$("#wifiset_info_modal").modal("hide");
+					wifi_save_final();
+				}
+				else if(judge_status == "wps"){
+					$("#wifiset_info_modal").modal("hide");
+					setTimeout(judge_passwd,500);
+				}
+			});
+			function wifi_save_final(){
+				if(wps_status == "off")
+				{
+					 XHR.get('<%=luci.dispatcher.build_url("admin", "more_wps", "wps_uciclose")%>',null,function(x,s){});
+				}
+                {
+                    var index = 1;
+                    var channel = $("#5g_channel").next().next().val();
+                    var str_name = $("#5g_bandwidth").attr("name");
+                    var temp_input = document.getElementsByName(str_name);
+                    if(channel==165 && temp_input.length>0){
+                        for(i=0;i<temp_input.length;i++)
+                        {
+                            if(temp_input[i].value == 1){
+                                index = i;
+                            }
+                            if( temp_input[i].value == 2 && temp_input[i].checked == true){
+                                temp_input[i].checked = false;
+                                temp_input[index].checked = true;
+                            }
+                        }
+                    }
+                }
+                var radio2g = document.getElementById("2g_radio").checked != true;
+				var radio5g = document.getElementById("5g_radio").checked != true;
+
+				if($("#2g_ssid").val() == $("#guest_ssid").val())
+					{
+						Alert("<%:multlangjs_guestssid_2gssid%>");
+					}
+					else if($("#2g_ssid").val() == $("#5g_ssid").val() && 
+						$("#2g_key").val() != $("#5g_key").val() &&  !radio2g && !radio5g  )
+					{
+						Alert("<%:multlangjs_5gkey_2gkey%>")
+					}
+					else
+					{
+						$("input[name='cbi.apply']").click();
+					}
+			};
+			$("#wifiset_cancel").click(function(){
+					;
+			});
+		});
+	</script>
+	<% elseif #request > 0 and request[3] == "DMZset" then %>
+	<button type="button" class="cbi_save_button_advance" id="dmzsetbt"><%:Save%></button>
+	<script type="text/javascript">
+		$(function(){
+			$("#dmzsetbt").click(function(){
+				var enable = $("input[name='cbid.DMZ.DMZ.enable']:checked").val();
+				if(enable == 1)
+				{
+					if(cbi_validate_form(document.cbi, null, Alert))
+					{
+						var dmzip = $("input[name='cbid.DMZ.DMZ.dmz_ip']").val();
+						var lanip = "<%=uci:get("network", "lan", "ipaddr") %>";
+						var lanmask = "<%=uci:get("network", "lan", "netmask") %>";
+						if( dmzip==lanip )
+						{
+							Alert("<%:dmzip should not equal lanip%>");
+							return false;
+						}
+						var net1, net2;
+						net1 = get_network_id(dmzip, lanmask);
+						net2 = get_network_id(lanip, lanmask);
+						if(net1[0]!=net2[0])
+						{
+							Alert("<%:dmzip should in lan segment%>");
+							return false;
+						}
+					}
+				}
+				$("input[name='cbi.apply']").click();
+			});
+		});
+	</script>
+	<% end %>
+	<% if manualapply then %>
+	
+	<button type="button" class="cbi_save_button_advance" id="lansetsave" data-toggle="modal"><%:Save%></button>
+
+	<!--modal-->
+	<div class="modal fade" id="myModal">
+	  <div class="modal-dialog alert_dialog">
+	    <div class="modal-content alert_content">
+	      <div class="color-gray">
+	         <span><%:lanset restart%><br><%:lanset confirm restart%></span>
+	        <button type="button" class="button-square-sm" data-dismiss="modal" id="manualcomfire"><close><%:lanset_confirm%></close></button>
+	        <button type="button" class="button-square-sm" data-dismiss="modal" id="modal-cancel-btn"><%:lanset cancle%></button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+	<script type="text/javascript">
+		var lan_flag;
+		$(function(){
+			function refreahpage()
+			{
+				var newip = $("input[name='cbid.network.lan.ipaddr']").val();
+				location.href = "http://" + newip + "/cgi-bin/luci/admin/more_wanset/lanset/";;
+			}
+
+			$("#lansetsave").click(function(){
+				lan_flag = 0;
+				$("#lansetsave").attr("data-target","");
+				if(cbi_validate_form(document.cbi, null, Alert))
+				{
+					var newip = $("input[name='cbid.network.lan.ipaddr']").val();
+					var oldip = "<%=uci.get("network","lan","ipaddr")%>"
+					var lanmask = $("input[name='cbid.network.lan.netmask']").val();
+					var netmask = "<%=uci.get("network","lan","netmask")%>"
+					
+					if( lanmask == "255.255.255.255" )
+					{
+						Alert("<%:lanset_maskerror%>");
+						lan_flag = 0;
+						return;
+					}
+					if(newip != oldip || netmask != lanmask){
+						lan_flag = 1;
+					}else{
+						lan_flag = 0;
+					}
+					var lanmaskNew = filterMask(lanmask);
+					if (lanmaskNew != lanmask)
+						$("input[name='cbid.network.lan.netmask']").val(lanmaskNew);
+					$("#lansetsave").attr("data-target","#myModal");		
+				}
+			});			
+
+			$("#manualcomfire").click(function(){
+				if(lan_flag == 1)
+				{
+					$("input[name='cbi.apply']").click();
+					start_progress_bar(30);
+					window.setTimeout(refreahpage, 30000);
+				}
+				else
+				{
+					start_progress_bar(10);
+					window.setTimeout(refreahpage, 10000);
+				}
+			});
+		});
+	</script>
+	<% end %>
+	<script type="text/javascript">cbi_d_update();</script>
+	</div>
+	<%- end -%>
+<% if #request > 0 and (request[2] == "wifiset" or request[2] == "networkset" )  then %>
+	</div>
+	</div><!--col 10  -->
+	<div class="col-md-1 col-xs-1">
+	</div>
+	</div>
+<%end%>
+</form>
+<%+footer%>
+

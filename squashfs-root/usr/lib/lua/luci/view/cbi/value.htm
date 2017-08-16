@@ -1,0 +1,103 @@
+<%+cbi/valueheader%>
+<% 
+  local phicomm_lua = require "phic" 
+  local wisp2_status = phicomm_lua.get_wifi_iface_config("ra0", "ApCliEnable") or {"0"}
+  local wisp5_status = phicomm_lua.get_wifi_iface_config("rai0", "ApCliEnable") or {"0"}
+  local wisp_status = wisp2_status[1] == "1" and "1" or wisp5_status[1] == "1" and "1" or "0"
+%>
+<% if self.sync_value then %>
+<script type="text/javascript">
+    function sync_value_<%=self.option%>(cur_this){
+     <%if self.password then%>
+      $(cur_this).prev("input").val($(cur_this).val());
+       if($("#<%=self.sync_id%>").attr("disabled")!="disabled"  <% if self.sync_depend_value then%> && $("#<%=self.sync_depend_id[1]%>").val() == $("#<%=self.sync_depend_id[2]%>").val() <%end%>){
+      $("#<%=self.sync_id%>").val($(cur_this).val());
+      $("#<%=self.sync_id%>").next("input").val($(cur_this).val());
+    }
+    <%else%>
+    if($("#<%=self.sync_id%>").attr("disabled")!="disabled"){
+     $("#<%=self.sync_id%>").val($("#<%=self.idname%>").val());
+    }
+     <%end%>
+ }
+</script>
+<% end -%>
+<script type="text/javascript">
+  function sync_pwd(cur_this){
+    $(cur_this).prev("input").val($(cur_this).val());
+  }
+</script>
+<%if self.password then%>
+<input type="password" style="display:none" id='<%if self.idname then%><%=self.idname%><%else%><%=cbid%><%end%>' <%=attr("name", cbid) .. attr("value", self:cfgvalue(section) or self.default) .. ifattr(self.size, "size") .. ifattr(self.placeholder, "placeholder")%> />
+<%end%>
+<input type="<%=self.password and 'password'%>" style='<%if self.size == "short" then%>width: 54px;<%end%>' class='<%if self.size == "long" then%>input-large<%elseif self.size == "middle" then%>input-middle<%elseif self.size == "short" then%>input-xsmall<%else%>input-large<%end%>' onchange="cbi_d_update(this.id)"
+<%if not self.password then%>
+id='<%if self.idname then%><%=self.idname%><%else%><%=cbid%><%end%>'
+<%=attr("name", cbid) .. attr("value", self:cfgvalue(section) or self.default) .. ifattr(self.size, "size") .. ifattr(self.placeholder, "placeholder")%>
+<%end%>
+<% if self.sync_value then%> onkeyup="sync_value_<%=self.option%>(this)"  
+<%elseif self.password then%>
+onkeyup="sync_pwd(this)"
+<%end%>
+<% if self.conflict_wisp and wisp_status == "1" then%>disabled="disabled"<%end%>
+<%if self.readonly then%>readonly="readonly"<%end%> />
+
+<% if self.warning and #self.warning > 0 then %>
+<span class="default_8080_span">
+    <%=self.warning%>
+</span>
+<%end%>
+<% if self.password then %>
+<img src="<%=media%>/images/icon_visible_off.png" 
+<% if self.idname then %>id="<%=self.idname%>_img"<%else%>id="<%=cbid%>_img"<% end%>  style="vertical-align:middle; float:left;margin-left:10px;margin-top:5px;cursor: pointer;" title="<%:Reveal/hide password%>" 
+onclick="cbi_show_hide_pwd(this)" />
+<% end %>
+<% if #self.keylist > 0 or self.datatype then -%>
+<script type="text/javascript">
+  <% if #self.keylist > 0 then -%>
+  cbi_combobox_init('<%=cbid%>', {
+      <%-
+      for i, k in ipairs(self.keylist) do
+          -%>
+      <%-=string.format("%q", k) .. ":" .. string.format("%q", self.vallist[i])-%>
+      <%-if i<#self.keylist then-%>,<%-end-%>
+      <%-
+      end
+      -%>
+  }, '<%- if not self.rmempty and not self.optional then -%>
+  <%-: -- Please choose -- -%>
+  <%- elseif self.placeholder then -%>
+  <%-= pcdata(self.placeholder) -%>
+  <%- end -%>', '
+  <%- if self.combobox_manual then -%>
+  <%-=self.combobox_manual-%>
+  <%- else -%>
+  <%-: -- custom -- -%>
+  <%- end -%>');
+  <%- end %>
+  <% if self.datatype then -%>
+  cbi_validate_field('<%if self.idname then%><%=self.idname%><%else%><%=cbid%><%end%>', <%=tostring((self.optional or self.rmempty) == true)%>, '<%=self.datatype:gsub("'", "\\'")%>','<%=self.title%>',error_msg);
+  <%- end %>
+</script>
+<% end -%>
+<script type="text/javascript">
+    var cbid ="";
+    <%if self.idname then%>
+    cbid="<%=self.idname%>";
+    <%end%>
+   if(cbid=="pppoepwd" || cbid == "2g_key" || cbid=="5g_key" || cbid == "guest_key" || cbid == "ddns_key"){
+      $("#"+cbid).next("input").val($("#"+cbid).val());
+    }
+</script>
+<%if self.datatype=="macaddr" then%>
+ <script type="text/javascript">
+   var str_temp= document.getElementById("cbid.network.wan.macoperate");
+   var value= $(str_temp).find("input").val();
+   if(value != input_clone_str)
+   {
+      var temp_ul = $(str_temp).next("ul");
+      $(temp_ul).find("a[value='"+value+"']").parent("li").click();
+   }
+ </script>
+ <%end%>
+<%+cbi/valuefooter%>

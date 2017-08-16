@@ -1,0 +1,11 @@
+#!/bin/sh
+. /lib/functions/nvram2uci.sh
+
+powerradio=`nvram get linux WifiPowerRadio`
+if [ "x${powerradio}" == "x0" ]
+then
+	enable="1"
+else
+	enable="0"
+fi
+uci set powersave.powersave.enable=${enable}

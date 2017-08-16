@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/view/schemeupgrade/upgrade.htm
+/usr/lib/lua/luci/controller/admin/schemeupgrade.lua
+/usr/lib/lua/luci/controller/schemeaction.lua

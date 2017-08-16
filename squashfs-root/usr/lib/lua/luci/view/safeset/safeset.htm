@@ -1,0 +1,294 @@
+<%+header%>
+<% 
+local uci = require("luci.model.uci").cursor()
+local synflood_rate = uci:get("safeset", "config", "synflood_rate") or "50"
+local udpflood_rate = uci:get("safeset", "config", "udpflood_rate") or "500"
+local icmpflood_rate = uci:get("safeset", "config", "icmpflood_rate") or "50"
+local enable_spi = uci:get("safeset", "config", "spi_enable") or "1"
+local enable_ddos = uci:get("safeset", "config", "ddos_enable") or "0"
+local enable_icmp_flood = uci:get("safeset", "config", "icmp_flood") or "0"
+local enable_udp_flood = uci:get("safeset", "config", "udp_flood") or "0"
+local enable_tcp_syn_flood = uci:get("safeset", "config", "syn_flood") or "0"
+local enable_wan_ping = uci:get("safeset", "config", "ping_disable") or "0"
+%>
+<link rel="stylesheet" href="<%=media%>/css/advanced.css" />
+<script>
+	$(function(){
+		var enable_spi = "<%=uci:get("safeset", "config", "spi_enable") or "1"%>";
+		var enable_ddos = "<%=uci:get("safeset", "config", "ddos_enable") or "0"%>";
+		var enable_icmp_flood = "<%=uci:get("safeset", "config", "icmp_flood") or "0"%>";
+		var enable_udp_flood = "<%=uci:get("safeset", "config", "udp_flood") or "0"%>";
+		var enable_tcp_syn_flood = "<%=uci:get("safeset", "config", "syn_flood") or "0"%>";
+		var enable_wan_ping = "<%=uci:get("safeset", "config", "ping_disable") or "0"%>";
+		/*防火墙开关*/
+		if (enable_spi == "1") {
+			$("#spi_en").val("1");
+			$("#firewall_div").show();
+		} else {
+			$("#spi_en").val("0");
+			$("#firewall_div").hide();
+		}
+
+		/*ICMP-FLOOD攻击过滤*/
+		if(enable_icmp_flood == "1") {
+			$("#icmp_flood_en").val("1");
+			$("#usIcmpFlood").attr("disabled",false);
+			$("#icmpFloodData").show();
+		} else {
+			$("#icmp_flood_en").val("0");
+			$("#usIcmpFlood").attr("disabled",true);
+			$("#icmpFloodData").hide();
+		}
+
+		/*UDP-FLOOD攻击过滤*/
+		if(enable_udp_flood == "1")
+		{
+			$("#udp_flood_en").val("1");
+			$("#usUdpFlood").attr("disabled",false);
+			$("#udpFloodData").show();
+		} else {
+			$("#udp_flood_en").val("0");
+			$("#usUdpFlood").attr("disabled",true);
+			$("#udpFloodData").hide();
+		}
+
+		/*TCP-FLOOD攻击过滤*/
+		if(enable_tcp_syn_flood == "1")
+		{
+			$("#tcp_flood_en").val("1");
+			$("#usTcpSynFlood").attr("disabled",false);
+			$("#tcpSynFloodData").show();
+		} else {
+			$("#tcp_flood_en").val("0");
+			$("#usTcpSynFlood").attr("disabled",true);
+			$("#tcpSynFloodData").hide();
+		}
+
+		/*防止外网ping*/
+		if(enable_wan_ping == "1")
+		{
+			$("#wan_ping_en").val("1");
+		} else {
+			$("#wan_ping_en").val("0");
+		}
+
+		/*DOS 攻击防范开关*/
+		if (enable_ddos == "1") {
+			$("#ddos_en").val("1");
+			$("#depend_on_ddos_div").show();
+		} else {
+			$("#ddos_en").val("0");
+			$("#depend_on_ddos_div").hide();
+		}
+
+     });
+
+	$(function(){
+		$(".img-switch").click(function(){
+			var str_img = $(this).attr("src");
+			
+			if(str_img == "<%=media%>/images/switch_off.png"){
+				$(this).attr("src","<%=media%>/images/switch_on.png");
+			}else{
+				$(this).attr("src","<%=media%>/images/switch_off.png");
+			}
+
+			switch(this.id){
+			case "enable_spi_img":
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#spi_en").val("1");
+					$("#firewall_div").show();
+					if ($("#ddos_en").val() == "1") {
+						if ($("#icmp_flood_en").val() == "1") {
+							$("#usIcmpFlood").attr("disabled",false);
+						}
+						if ($("#udp_flood_en").val() == "1") {
+							$("#usUdpFlood").attr("disabled",false);
+						}
+						if ($("#tcp_flood_en").val() == "1") {
+							$("#usTcpSynFlood").attr("disabled",false);
+						}
+					}
+				} else {
+					$("#spi_en").val("0");
+					$("#usIcmpFlood").attr("disabled",true);
+					$("#usUdpFlood").attr("disabled",true);
+					$("#usTcpSynFlood").attr("disabled",true);
+					$("#firewall_div").hide();
+				}
+				break;
+			case "enable_ddos_img":
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#ddos_en").val("1");
+					$("#depend_on_ddos_div").show();
+					if ($("#icmp_flood_en").val() == "1") {
+						$("#usIcmpFlood").attr("disabled",false);
+					}
+					if ($("#udp_flood_en").val() == "1") {
+						$("#usUdpFlood").attr("disabled",false);
+					}
+					if ($("#tcp_flood_en").val() == "1") {
+						$("#usTcpSynFlood").attr("disabled",false);
+					}
+				} else {
+					$("#ddos_en").val("0");
+					$("#usIcmpFlood").attr("disabled",true);
+					$("#usUdpFlood").attr("disabled",true);
+					$("#usTcpSynFlood").attr("disabled",true);
+					$("#depend_on_ddos_div").hide();
+				}
+				break;
+			case "enable_icmp_flood_img":
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#icmp_flood_en").val("1");
+					$("#usIcmpFlood").attr("disabled",false);
+					$("#icmpFloodData").show();
+				} else {
+					$("#icmp_flood_en").val("0");
+					$("#usIcmpFlood").attr("disabled",true);
+					$("#icmpFloodData").hide();
+				}
+				break;
+			case "enable_udp_flood_img":
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#udpFloodData").show();
+					$("#usUdpFlood").attr("disabled",false);
+					$("#udp_flood_en").val("1");
+				} else {
+					$("#udpFloodData").hide();
+					$("#usUdpFlood").attr("disabled",true);
+					$("#udp_flood_en").val("0");
+				}
+				break;
+			case "enable_tcp_syn_flood_img":
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#tcpSynFloodData").show();
+					$("#tcp_flood_en").val("1");
+					$("#usTcpSynFlood").attr("disabled",false);
+				} else {
+					$("#tcpSynFloodData").hide();
+					$("#usTcpSynFlood").attr("disabled",true);
+					$("#tcp_flood_en").val("0");
+				}
+				break;
+			case "enable_wan_ping_img":
+				if(str_img == "<%=media%>/images/switch_off.png"){
+					$("#wan_ping_en").val("1");
+				} else {
+					$("#wan_ping_en").val("0");
+				}
+				break;
+			}
+		});	
+
+		$("#save_safe").click(function(){
+			if (!cbi_validate_form(document.safe_form, null,Alert))
+					return false;
+			$("#wan_check_modal").modal("show");
+			setTimeout(function(){$("#safe_form").submit();},1000);
+			                                     
+		});
+	});
+
+</script>
+<form action="<%=luci.dispatcher.build_url("admin", "more_safeset", "form_proc")%>" method="POST" id="safe_form" name="safe_form">
+    <input type="hidden" name="spi_en" id="spi_en" value="1">
+    <input type="hidden" name="ddos_en" id="ddos_en" value="1">
+    <input type="hidden" name="icmp_flood_en" id="icmp_flood_en" value="1">
+    <input type="hidden" name="udp_flood_en" id="udp_flood_en" value="0">
+    <input type="hidden" name="tcp_flood_en" id="tcp_flood_en" value="1">
+    <input type="hidden" name="wan_ping_en" id="wan_ping_en" value="0">
+	<!-- secSet -->
+	<div class="setcontent advanced">
+		<div class="title-span color-orange"><span >安全设置</span></div>
+		<div class="title-underline"></div>
+		<div class="setlinediv">
+			<span class="link-span1">防火墙：</span>
+			<span class="switchspan">
+			<%if enable_spi == "1" then%>
+				<img class="img-switch" id="enable_spi_img" src="<%=media%>/images/switch_on.png" />
+			<%else%>
+				<img class="img-switch" id="enable_spi_img" src="<%=media%>/images/switch_off.png" />
+			<%end%>
+			</span>	
+		</div>
+		<div id="firewall_div">
+			<div class="setlinediv">
+				<span class="link-span1">DoS攻击防范：</span>
+				<span class="switchspan">
+				<%if enable_ddos == "1" then%>
+					<img class="img-switch" id="enable_ddos_img" src="<%=media%>/images/switch_on.png" />
+				<%else%>
+					<img class="img-switch" id="enable_ddos_img" src="<%=media%>/images/switch_off.png" />
+				<%end%>				
+				</span>	
+			</div>
+			<div id="depend_on_ddos_div">
+				<div class="setlinediv">
+					<span class="link-span1">ICMP-FLOOD攻击过滤：</span>
+					<span class="switchspan">
+					<%if enable_icmp_flood == "1" then%>
+						<img class="img-switch" id="enable_icmp_flood_img" src="<%=media%>/images/switch_on.png" />
+					<%else%>
+						<img class="img-switch" id="enable_icmp_flood_img" src="<%=media%>/images/switch_off.png" />
+					<%end%>
+					</span>	
+				</div>
+				<div class="setlinediv" id="icmpFloodData" style="display: none;">
+					<span class="link-span1">ICMP-FLOOD数据包阈值：</span>
+					<input class="input-small" type="text" name="usIcmpFlood" id="usIcmpFlood" maxlength="5"  value="<%=icmpflood_rate%>" />
+					<span class="content-span">包/秒(5-3600)</span>
+				</div>
+				<div class="setlinediv">
+					<span class="link-span1">UDP-FLOOD攻击过滤：</span>
+					<span class="switchspan">
+					<%if enable_udp_flood == "1" then%>
+						<img class="img-switch" id="enable_udp_flood_img" src="<%=media%>/images/switch_on.png" />
+					<%else%>
+						<img class="img-switch" id="enable_udp_flood_img" src="<%=media%>/images/switch_off.png" />
+					<%end%>
+					</span>	
+				</div>	
+				<div class="setlinediv" id="udpFloodData" style="display: none;">
+					<span class="link-span1">UDP-FLOOD数据包阈值：</span>
+					<input class="input-small" type="text" name="usUdpFlood" id="usUdpFlood"  maxlength="5" value="<%=udpflood_rate%>" />
+					<span class="content-span">包/秒(5-3600)</span>
+				</div>
+				<div class="setlinediv">
+					<span class="link-span1">TCP-SYN-FLOOD攻击过滤：</span>
+					<span class="switchspan">
+					<%if enable_tcp_syn_flood == "1" then%>
+						<img class="img-switch" id="enable_tcp_syn_flood_img" src="<%=media%>/images/switch_on.png" />
+					<%else%>
+						<img class="img-switch" id="enable_tcp_syn_flood_img" src="<%=media%>/images/switch_off.png" />
+					<%end%>
+					</span>	
+				</div>
+				<div class="setlinediv" id="tcpSynFloodData" style="display: none;">
+					<span class="link-span1">TCP-SYN-FLOOD数据包阈值：</span>
+					<input class="input-small" type="text" name="usTcpSynFlood" id="usTcpSynFlood" value="<%=synflood_rate%>" maxlength="5" />
+					<span class="content-span">包/秒(5-3600)</span>
+				</div>
+				<div class="setlinediv">
+					<span class="link-span1">禁来自WAN口的Ping：</span>
+					<span class="switchspan">
+					<%if enable_wan_ping == "1" then%>
+						<img class="img-switch" id="enable_wan_ping_img" src="<%=media%>/images/switch_on.png" />
+					<%else%>
+						<img class="img-switch" id="enable_wan_ping_img" src="<%=media%>/images/switch_off.png" />
+					<%end%>
+					</span>	
+				</div>		
+			</div> <!--end of depend_on_ddos_div-->
+		</div><!--end of firewall_div-->
+	    <div class="setlinediv margintop-30">
+	        <div type="button" id="save_safe" class="button-square-lg btndiv1"><%:Save%></div>
+	    </div>
+	</div><!--end secset-->	
+    <script type="text/javascript">//<![CDATA[
+			cbi_validate_field('usIcmpFlood', false, 'and(uinteger, range(5, 3600))', 'ICMP-FLOOD',error_msg);
+			cbi_validate_field('usUdpFlood', false, 'and(uinteger, range(5, 3600))', 'UDP-FLOOD',error_msg);
+			cbi_validate_field('usTcpSynFlood', false, 'and(uinteger, range(5, 3600))', 'TCP-SYN-FLOOD',error_msg);
+    //]]></script>
+</form>
+<%+footer%>

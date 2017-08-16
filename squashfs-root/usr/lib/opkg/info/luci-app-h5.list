@@ -1,0 +1,11 @@
+/usr/lib/lua/luci/view/h5/wanconnectfail.htm
+/usr/lib/lua/luci/view/h5/internetcheck.htm
+/usr/lib/lua/luci/view/h5/welcome.htm
+/usr/lib/lua/luci/view/h5/find_pwd.htm
+/usr/lib/lua/luci/view/h5/link.htm
+/usr/lib/lua/luci/controller/admin/h5.lua
+/usr/lib/lua/luci/view/h5/internetset.htm
+/usr/lib/lua/luci/view/h5/saveconfig.htm
+/usr/lib/lua/luci/view/h5/login.htm
+/usr/lib/lua/luci/view/h5/wirelessset.htm
+/usr/lib/lua/luci/view/h5/showwlconfig.htm

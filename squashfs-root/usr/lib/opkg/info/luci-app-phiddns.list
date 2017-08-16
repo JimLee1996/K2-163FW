@@ -1,0 +1,3 @@
+/usr/lib/lua/luci/model/cbi/ddns.lua
+/usr/lib/lua/luci/controller/admin/ddns.lua
+/usr/lib/lua/luci/i18n/phiddns.zh-cn.lmo

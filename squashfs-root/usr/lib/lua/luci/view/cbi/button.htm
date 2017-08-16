@@ -1,0 +1,31 @@
+<%+cbi/valueheader%>
+	<%
+		local uci_t = uci.cursor()
+		local wispmode=uci_t:get("network", "wan", "ifname")
+		local stat, iwinfo = pcall(require, "iwinfo")
+		local phy_status = nil
+		levle = iwinfo.get_phy_connect("wan")
+		for k, v in ipairs(levle or { }) do
+			if k or v then
+				phy_status = v
+			end
+		end
+	%>
+	<% if self:cfgvalue(section) ~= false then %>
+	<%if self.jump_node=="wandetect" then%>
+		<div class="height_45" id="wan_detect_status" <% if wispmode=="apcli0" or wispmode=="apclii0" or phy_status==0 then %>style="display:none"<% end %>>
+	<%end%>
+		<input  class="<%if self.jump_node then%>cbi_wan_check <% else %>cbi-button cbi-input-<%=self.inputstyle or "button" %><%end%>" type="button"<%= attr("name", cbid) .. attr("id", cbid) .. attr("value", self.inputtitle or self.title)%>
+		<% if self.jump_node then %>
+			 onclick="document.forms[0].action='<%=REQUEST_URI%>/<%=self.jump_node%>';
+		<% else %>
+			onclick="document.forms[0].action='<%=REQUEST_URI%>';
+		<% end %>
+			document.forms[0].target='_parent';document.forms[0].submit();"/>
+	<%if self.jump_node=="wandetect" then%>
+		</div>
+	<%end%>
+	<% else %>
+		-
+	<% end %>
+<%+cbi/valuefooter%>

@@ -1,0 +1,9 @@
+Package: luci-app-schemeupgrade
+Version: git-adab218-1
+Depends: libc
+Source: package/ramips/ui/luci-phicomm
+Section: luci
+Maintainer: LuCI Development Team <luci@lists.subsignal.org>
+Architecture: ramips_24kec
+Installed-Size: 2721
+Description:  Scheme upgrade

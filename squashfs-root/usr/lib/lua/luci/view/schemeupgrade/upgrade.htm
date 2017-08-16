@@ -1,0 +1,129 @@
+<%
+	local disp = require "luci.dispatcher"	
+	local request = disp.context.request
+	require "luci.fs"
+	require "luci.phicommproduct"
+	local uci_t = require "luci.model.uci".cursor()
+	
+	data ={                           
+            wan         = {}                     
+            } 
+	local has_network = luci.fs.stat("/etc/config/network")
+	
+	if has_network then
+        data.wan.ifname        = uci_t:get("network","wan","ifname")    
+        if data.wan.ifname == "apcli0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apcli0 | grep HWaddr | cut -c 39-55") 
+        elseif data.wan.ifname == "apclii0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apclii0 | grep HWaddr | cut -c 39-55") 
+        else   
+            if uci_t:get("network","wan", "ignore") == "1" then
+                data.wan.macaddr    = uci_t:get("network","wan","macaddr")
+            else
+                data.wan.macaddr    = uci_t:get("network","wan","mac_addr")
+            end
+        end
+
+        data.wan.proto        = uci_t:get("network","wan","proto")
+    else
+        data.wan.macaddr    = "00:00:00:00:00:00" 
+    end
+	
+	function get_wan_mac()                                                                  
+    	local mac = "00:00:00:00:00:00"   
+
+    	if data.wan.macaddr then
+       	 mac = data.wan.macaddr          
+    	end                                                
+    return mac    
+end   
+%>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>K2</title>
+	<link rel="stylesheet" href="<%=media%>/css/login.css">
+	<link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+	<link rel="stylesheet" href="<%=media%>/css/upgrade.css">
+	<script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+	<script type="text/javascript" src="<%=media%>/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+	<script type="text/javascript">
+		$(function(){
+			 $('.content').niceScroll({
+              cursorcolor: "#CCCCCC",
+              cursoropacitymax: 1, 
+              touchbehavior: false, 
+              cursorwidth: "5px", 
+              cursorborder: "0", 
+              cursorborderradius: "5px",
+              autohidemode: false 
+          });
+		})
+		function start_progress_bar(progress_bar_time){
+			$("#progress_bar").attr("style","width:12px");
+			$("#progress_bar").animate({width:$("#progress_bar").attr("w")+"px"},progress_bar_time*1000,function(){
+				location.href="http://p.to/";
+			});
+		}
+		var v_str=".";
+		function download_time(){
+			v_str=v_str+".";
+			if(v_str=="...."){
+				v_str="";
+			}
+			setTimeout(download_time,1000);
+			$("#download_span").html(v_str);
+		}
+		download_time();
+	    function rule_del(){
+	        $.ajax({
+        	    type:"post",
+    	        url:"<%=luci.dispatcher.build_url("admin","more_schemeupgrade","download")%>",
+    	        success: function(msg){
+    	            if (msg.status == "0")
+	                {
+						$("#scheme_span").html("下载失败，返回<a href=\"http://p.to\">登录</a>页面</span>");
+					} else if (msg.status == "2")
+					{
+						$("#scheme_span").html("校验失败，返回<a href=\"http://p.to\">登录</a>页面</span>");
+        	        } else if (msg.status == "1")
+	                {
+						$("#scheme_span").html("版本升级中");
+						$("#scheme_span1").html("路由器固件升级中，请勿切断电源！");
+						start_progress_bar(120);
+            	    }
+        	    }
+    	    });
+		}
+		rule_del();
+	</script>
+</head>
+<body class="content" oncontextmenu=self.event.returnValue=false>
+	<div class="login_logo">
+		<img src="<%=media%>/images/logo_guide.png"/>
+		<span>固件升级</span>
+	</div>
+	<div class="login_top_right"></div>
+	<div class="upgrade_center">
+		<img src="<%=media%>/images/softupgrade.png">
+		<div class="progress_div">
+			<div class="progress_bar_div" id="progress_bar" w="476">
+			<div class="progress_bar_circle_div"></div>
+			</div>
+			
+		</div>
+		<div class="upgrade_msg">
+			<span id="scheme_span" class="upgrade_msg_span1">下载中<span id="download_span"></span></span>
+			<span id="scheme_span1" class="upgrade_msg_span2"></span>
+		</div>
+	</div>
+	<div class="login_bottom_left"></div>
+	<div class="login_fotter">
+		<span class="hotline_span"><%:phicomm license%></span>
+		<span class="mac_span"><%:MAC Address%>：<%=get_wan_mac()%></span>
+		<span class="software_version_span"><%:software version%>：<%=pcdata(luci.phicommproduct.softversion)%></span>
+	</div>
+</body>
+</html>

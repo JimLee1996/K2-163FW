@@ -1,0 +1,347 @@
+<%#
+Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+
+DISCREPTION   : LuCI - Lua Configuration Interface - router change support
+AUTHOR        : kaiwen.zhao <kaiwen.zhao@phicomm.com.cn>
+CREATED DATE  : 2016-10-25
+MODIFIED DATE : 
+-%>
+
+<!DOCTYPE html>
+<html>
+<% 
+local disp = require "luci.dispatcher" 
+require "luci.phicommproduct"
+local uci_t = luci.model.uci.cursor() 
+
+local firststart = "0"
+firststart = uci_t:get("luci", "main", "firststart")
+%>
+<head> 
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+    <%+title%>
+     <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/icon_fonts_style.css">
+    <link rel="stylesheet" href="<%=media%>/css/guide.css">
+	<link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/function.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+   <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="<%=media%>/js/html5shiv.js"></script>
+  <script src="<%=media%>/js/respond.min.js"></script>
+  <![endif]-->
+  
+  </head>
+  
+  <style type="text/css">
+	div.find-pwd-con{
+		width:100%;
+		margin: 0px auto;
+		margin-top:9.4%;
+	}
+	div.new-router{
+		//height: 1px;
+		width:50%;
+		display: inline-block;
+		//border: 1px solid #ddd;
+		/*background: url(/luci-static/bootstrap/images/h5_new_router.png) no-repeat;*/
+		z-index:1
+	}
+	div.old-router{
+		//height: 131px;
+		width:50%;
+		display: inline-block;
+		float: right;
+		//border: 1px solid #ddd;
+		/*background: url(/luci-static/bootstrap/images/h5_old_router.png) no-repeat;*/
+		z-index:1
+	}
+	div.pic-con{
+		z-index:1;
+		height:200px;
+		padding-top:10px;
+		background-color:#FFFFFF;
+	}
+	div.connect-con{
+		width: 43.5%;
+		height: 9.8%;
+		border: 1px solid #F08300;
+		border-top: 0;
+		margin-left: 27.5%;
+		margin-top: -10px;
+		z-index: 1005;
+		position: absolute;
+		/* margin: 0 auto; */
+	}
+	#find_pwd_bt{
+	position:fixed;
+	}
+	div.btn-con{
+		width:100%;
+		//height: 34px;
+		margin: 20px auto;
+		text-align: center;
+		
+		bottom:0px;
+	}
+	input.start_btn{
+		width: 90%;
+		height: 40px;
+		vertical-align: middle;
+		font-size: 16px;
+		background-color: #F08300;
+		color: #FFFFFF;
+		cursor: pointer;
+		border: 0;
+		border-radius:0px;
+		margin: auto 15px;
+	}
+	input.short_btn{
+		width: 40%;
+		height: 40px;
+		vertical-align: middle;
+		font-size: 16px;
+		background-color: #F08300;
+		color: #FFFFFF;
+		cursor: pointer;
+		border: 0;
+		border-radius:0px;
+		margin: auto 15px;
+	}
+	input.next_btn{
+		width: 90%;
+		height: 40px;
+		vertical-align: middle;
+		font-size: 16px;
+		background-color: #F08300;
+		color: #FFFFFF;
+		cursor: pointer;
+		border: 0;
+		border-radius:0px;
+		margin: auto 15px;
+	}
+	
+	div.note{
+		width: 100%;
+		/* margin-left: 173px; */
+		/* margin-bottom: 10px; */
+		/* margin-top: -60px; */
+		text-align: center;
+		clear: both;
+		margin: 0 auto;
+		//margin-top: 60px;
+	}
+	i.icon-con{
+		font-size: 20px;
+	}
+	p.note{
+		color: rgb(102,102,102);
+		width: 200px;
+		font-size: 14px;
+		line-height: 20px;
+		margin: 0 auto;
+	}
+	#FindPwd{
+		display:none;
+	}
+	#find-pwd-result{
+		display:none;
+	}
+	#find_pwd_success{
+		display:none;
+	}
+	#find_pwd_failed{
+		display:none;
+	}
+	.check_load_div{
+		margin: 0 auto; 
+		//margin-top: 240px;
+		width: 100%;
+		//height: 200px;
+		//background: #FFFFFF;
+		text-align:center;
+		display:none;
+	}
+	.check_load_div span{
+		display:block;
+		color:#000000;
+		font-size:14px;	
+		margin-top: 10px;
+	}
+	.loading_modal_div{
+		margin: 0 auto; 
+		margin-top: 240px;
+		width: 80%;
+		height: 200px;
+		background: #FFFFFF;
+		text-align:center;
+	}
+	.loading_img{
+		vertical-align:middle;
+		
+		margin-top:50px;
+		
+	}
+	.loading_msg_span{
+		display:block;
+		color:#F08300;
+		font-size:14px;	
+		margin-top: 10px;	
+	}
+	div.new-router img ,div.old-router img{
+		//height: 131px;
+		width: 66%;
+	} 
+</style>
+
+<script type="text/javascript">
+var phy_connect_wan = 0;
+var link1 = 0;
+var link2 = 0;
+var link3 = 0;
+var link4 = 0;
+
+function back_page(){
+	window.location.href="internetset";
+}
+function next_page(){
+	window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "kill_pppoe_server")%>";
+}
+
+function find_pwd_page() {	
+	$("#wan_check_modal").modal("show");
+	$.ajax({
+		url:'<%=luci.dispatcher.build_url("admin", "quickguide", "start_find_passwd")%>',
+		success:function(s){
+			$("#wan_check_modal").modal("hide");
+			$("#find-pwd-con-id").hide();
+			console.log(s);
+
+			if(s.protocol == "pap") {
+				$("#find_pwd_success").show();
+				$("#find_pwd_status_1").html("宽带密码找回成功并自动拨入，请继续进行无线设置!");
+				$("#find_pwd_status_2").html("(宽带帐号：" + s.user + "	" + "宽带密码：" + s.passwd + ")");					
+			} else {
+				$("#find_pwd_failed").show();
+				$("#find_pwd_status_2").html("密码找回失败，建议联系运营商或重试找回");
+			}
+		}
+	});
+	
+	
+
+	//
+	$("#find-pwd-result").show();	
+}
+
+function check_phy_req() {
+
+	$.ajax({
+	type:"post",
+	
+	url:"/LocalCheckInterfacelink.asp?action=get",
+	success:function(s, other) {
+		link1=s.link1;
+		link2=s.link2;
+		link3=s.link3;
+		link4=s.link4;
+		
+		if(link4==1) {
+	$(".note").show();
+	$(".check_load_div").hide();
+		$("#FindPwd").show();
+		$("#guide_msg_span1").addClass("icon-connect")
+		$("#connect_status_id").html("检测到网口连接，请再次确认连接是否正确并找回");
+	}else {
+		$(".check_load_div").hide();
+		$(".note").show();
+		$("#guide_msg_span1").addClass("icon-break")
+		$("#connect_status_id").html("未检测到网口连接");
+	}
+	}});
+	console.log(link4);
+	
+}
+
+	//check_phy_req();
+	//setInterval(check_phy_req, 3000);
+	setTimeout(function(){
+		$(".note").hide();
+		$(".check_load_div").show();
+		setTimeout(check_phy_req, 2000);
+	},1000);
+	
+	setInterval(check_phy_req, 3000);
+	
+	
+
+</script>
+
+<body class="content_body" style="margin: 0 0;" oncontextmenu=self.event.returnValue=false>
+<div class="modal fade" id="wan_check_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="modal-content loading_modal_div" role="document">
+            <img src="<%=media%>/images/oncheckload.gif" class="loading_img"/>
+            <span class="loading_msg_span">正在找回</span>
+        </div>
+</div>
+<form method="post" name="quickguide_welcome" action="<%=luci.dispatcher.build_url("admin", "quickguide", "welcome")%>">   
+    <div class="setcontent">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="title-underline"></div>
+        <div class="margintop-1" id="img_back">
+            <% if "0" == firststart then %>
+            <img id="back2link" src="<%=media%>/images/back_yellow.png" />
+            <% end %>
+            <span class="title-span" style="font-size: 20px;color: #F08300;">上网设置</span>
+        </div> 
+	<div id="find-pwd-con-id" class="find-pwd-con">
+		<div class="pic-con">
+			<div style="width:100%">
+			<span style="width:50%;text-align:center;float:left;color:#F08300;font-size:16px;">新路由器</span>
+			<span style="width:50%;text-align:center;float:left;color:#F08300;font-size:16px;">旧路由器</span>
+			</div>
+			<div class="new-router"><img src="/luci-static/bootstrap/images/h5_new_router.png" alt="Flowers"></div>
+			<div class="old-router"><img src="/luci-static/bootstrap/images/h5_old_router.png" alt="Flowers"></div>
+			<div class="connect-con"></div>
+		</div>
+		
+		<div class="note" style="width:60%;margin-top:5%">
+			<span id="guide_msg_span1" class="guide_msg_div_span1" style="color:#F08300;margin-left:-30px;"></span>
+			<span style="color:#666666;font-size:14px;" id="connect_status_id">请按图示用网线连接2个路由器</span>
+			
+		</div>
+		<div class="check_load_div">
+            <img src="<%=media%>/images/oncheckload.gif" class="loading_img"/>
+            <span style="color:#666666;font-size:14px;">正在检测连接状况，请稍后...</span>
+        </div>
+	<div class="btn-con" id="find_pwd_bt">
+		<input id="FindPwd" class="start_btn" type="button" value="开始找回" onclick="find_pwd_page()" />
+	</div>		
+	</div>
+	
+	<div id="find-pwd-result" class="find-pwd-con">
+		<div class="note">
+			<p id="find_pwd_status_1",class="note" style="font-size:14px; font-weight: 900;"></p>
+			<p id="find_pwd_status_2",class="note" style="font-size:14px; font-weight: 900;"></p>
+		</div>	
+	<div id="find_pwd_success" class="btn-con">
+		<input class="next_btn" type="button" value="下一步" onclick="next_page()" />
+	</div>
+	<div id="find_pwd_failed" class="btn-con">
+		<input class="short_btn" type="button" value="返回重试" onclick="back_page()" />
+		<input class="short_btn" type="button" value="跳 过" onclick="next_page()"/>
+	</div>		
+	</div>
+
+    </div>
+</form>
+</body>
+
+</html>

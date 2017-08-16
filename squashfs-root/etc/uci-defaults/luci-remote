@@ -1,0 +1,14 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@remote[-1]
+	add ucitrack remote
+	set ucitrack.@remote[-1].init=remote
+EOF
+
+rm -f /tmp/luci-indexcache
+
+uci set	 remote.remote.remote_port=8181
+uci commit remote
+
+exit 0

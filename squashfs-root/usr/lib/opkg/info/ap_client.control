@@ -1,0 +1,8 @@
+Package: ap_client
+Version: 1.0-1
+Depends: libc, libuci, phicomm_libs, libubox, libubus, jshn
+Source: package/phicomm/ap_client
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 17609
+Description:  ApClient通用工具库，提供ApClient相关的扫描、配置函数及工具

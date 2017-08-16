@@ -1,0 +1,4 @@
+/etc/nvram2uci/dhcp
+/usr/lib/lua/luci/view/dhcp_server.htm
+/usr/lib/lua/luci/controller/admin/dhcp.lua
+/etc/config/common_host

@@ -1,0 +1,8 @@
+Package: nvram
+Version: 1
+Depends: libc, libnvram
+Source: package/phicomm/phi_nvram
+Section: opt
+Architecture: ramips_24kec
+Installed-Size: 2030
+Description:  MTK nvram tool

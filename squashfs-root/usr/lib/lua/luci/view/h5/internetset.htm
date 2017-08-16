@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<% 
+    local uci_t = luci.model.uci.cursor()
+    local firststart = "0"
+    firststart = uci_t:get("luci", "main", "firststart")
+%> 
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+    <% include("themes/" .. theme .. "/multlangjs") %>
+    <%+title%>
+</head>
+<body>
+<form method="post" name="internetset" action="<%=luci.dispatcher.build_url("admin", "h5", "internetset")%>">
+    <div class="setcontent">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="title-underline"></div>
+        <div class="margintop-1" id="img_back">
+            <% if "0" == firststart then %>
+            <img id="back2link" src="<%=media%>/images/back_yellow.png" />
+            <% end %>
+            <span class="title-span" style="font-size: 20px;color: #F08300;">上网设置</span>
+        </div>    
+        <div class="set-linediv" id="quickset" style="cursor: pointer;">
+            <div class="input-group input-l">
+                <input type="hidden"  name="wanlinkWay"  value="pppoe" />
+                <input type="hidden" name="staticNetmask" id="staticNetmask" value="255.255.255.0" />
+                <input name="autodetect" value="" type="hidden">
+                <span class="form-control" id="wanlink"></span>      
+                <span class="input-group-addon"><img id="img_down" src="<%=media%>/images/down.png" /></span>        
+            </div>    
+        </div> 
+        <div class="set-linediv" id="pppoe_div">
+            <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon">宽带账号</span>
+                <input type="text" class="form-control" name="pppoeUser" id="pppoeUser" value="<%=uci_t:get("network","wan","username")%>">
+            </div>
+            <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon">宽带密码</span>
+                <input type="password" class="form-control" name="pppoePass" id="pppoePass" value="<%=uci_t:get("network","wan","password")%>">
+            </div>    
+            <hr />
+            <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon">服务名</span>
+                <input type="text" class="form-control" name="pppoeService" id="pppoeService" value="<%=uci_t:get("network","wan","service")%>">
+            </div>
+            <hr />
+        </div>            
+        <div class="set-linediv" id="staticip_div" style="display: none;">
+                <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon">IP地址</span>
+                <input type="text" class="form-control" name="staticIp" id="staticIp" value="<%=uci_t:get("network","wan","ipaddr")%>">
+            </div>    
+            <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon">默认网关</span>
+                <input type="text" class="form-control" name="staticGateway" id="staticGateway" value="<%=uci_t:get("network","wan","gateway")%>">
+            </div>
+            <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon">首选DNS</span>
+                <input type="text" class="form-control" name="staticPriDns" id="staticPriDns" value="<%=uci_t:get("network","wan","dns")%>">
+            </div>
+            <hr />
+        </div>         
+		<% if "1" == firststart then %>		
+        <div class="margintop-10 marginbottom-2">
+            <button type="button" class="btn-square-lg" style="width:45%" onclick="find_pppoe_passwd_page()">找回宽带密码</button>
+            <button type="button" class="btn-square-lg" style="width:45%" onclick="nextpage()">下一步</button>
+        </div>
+		<%else%>
+        <div class="margintop-10 marginbottom-2">   
+            <button type="button" class="btn-square-lg" onclick="nextpage()">下一步</button>
+        </div> 	
+		<%end%>
+    </div>
+    <div class="full-bg"></div>
+    <footer class="showorhide">           
+        <div class="set-linediv" id="wanlinkWay" style="height: 226px;position: fixed;bottom: 0;">
+            <ul class="list-group">
+                <li class="list-group-item" value="dhcp">DHCP自动获取IP地址</li>
+                <li class="list-group-item" value="pppoe">宽带拨号上网</li>
+                <li class="list-group-item" value="static">静态IP</li>
+                <li class="list-group-item" value="detection">自动检测</li>
+                <li class="list-group-item" value="cancel" style="margin-top: 20px;">取消</li>                                            
+            </ul>                
+        </div> 
+    </footer>   
+</form>
+</body>
+<script>
+    function initLinkWay(){
+        <% if "autodetect" == trigefrom then %>
+        var wancfgtype = "<%=uci_t:get("network","wan","detectwanproto")%>";
+        <% else %>
+        var wancfgtype = "<%=uci_t:get("network","wan","proto")%>";
+        <% end %>
+        if(wancfgtype == "pppoe" || wancfgtype == "PPPOE")
+        {
+            document.internetset.wanlinkWay.value = "pppoe";
+        }
+        else if(wancfgtype == "dhcp" || wancfgtype == "DHCP")
+        {
+            document.internetset.wanlinkWay.value = "dhcp";
+        }
+        else
+        {
+            document.internetset.wanlinkWay.value = "static";
+        }
+        var wanlink_way = document.internetset.wanlinkWay.value;
+            if(wanlink_way == "pppoe"){
+                $("#wanlink").html("宽带拨号上网");
+                $("#pppoe_div").show();
+                $("#staticip_div").hide();                
+            }else if(wanlink_way == "static"){
+                $("#wanlink").html("静态IP");
+                $("#pppoe_div").hide();
+                $("#staticip_div").show();
+            }else if(wanlink_way == "dhcp"){
+                $("#wanlink").html("DHCP自动获取");
+                $("#pppoe_div").hide();
+                $("#staticip_div").hide();
+        }
+    }
+
+    initLinkWay();
+    
+    $("#quickset").click(function(){
+        $(".showorhide").show();
+        $(".full-bg").show();
+        $("#wanlinkWay").show();
+    });
+    
+    $("#wanlinkWay li").click(function(){
+        var option_val = $(this).attr("value");
+        if(option_val == "detection"){
+            document.internetset.autodetect.value = "on"
+            setTimeout("save()", 200);
+        }else if(option_val == "cancel"){
+            
+        }else{
+                $("input[name=wanlinkWay]").val(option_val);
+                if(option_val == "pppoe"){
+                    $("#wanlink").html("宽带拨号上网");
+                    $("#pppoe_div").show();
+                    $("#staticip_div").hide();
+                }else if(option_val == "static"){
+                    $("#wanlink").html("静态IP");
+                    $("#pppoe_div").hide();
+                    $("#staticip_div").show();
+                }else if(option_val == "dhcp"){
+                    $("#wanlink").html("DHCP自动获取");
+                    $("#pppoe_div").hide();
+                    $("#staticip_div").hide();
+            }
+        }
+        
+        $("#wanlinkWay").hide();
+        $(".full-bg").hide();
+    });
+
+    function save()
+    {
+        document.internetset.submit();
+    }
+    function dnscheck()
+    {
+        document.internetset.cbi_validators = null;
+        cbi_validate_field('staticPriDns', false, 'ipv4', '<%:qckgd_dns_service%>', error_msg);
+    }
+    function selectchange(selectvalue)
+    {
+        document.internetset.cbi_validators = null;
+        if(selectvalue == "static")
+        {
+            cbi_validate_field('staticIp', false, 'ipv4', '<%:IP address%>:', error_msg);
+            cbi_validate_field('staticGateway', false, 'ipv4', '<%:Default gateway%>:', error_msg);
+        }
+        else if(selectvalue == "pppoe")
+        {
+            cbi_validate_field('pppoeUser', false, 'and(sperangelength(1,32),checkPPPspechar,blank)', '<%:qckgd_pppoe_user%>', error_msg);
+            cbi_validate_field('pppoePass', false, 'and(rangelength(1,32),checkPPPspechar_cn,blank)', '<%:qckgd_pppoe_pwd%>', error_msg);
+            cbi_validate_field('pppoeService', true, 'and(checkPPPspechar,blank)', '<%:qckgd_pppoe_service%>', error_msg);
+        }
+    }
+    function netOrBroadAddr(IP, MASK, SoE)
+    {                                                                                
+        var IP_AMOUNT_MAX = 256;
+        var ip = IP.split(".");
+        var mask = MASK.split(".");
+        var i;
+        for(i=0;i<ip.length;i++)                                   
+        {                             
+                /* SoE=0:show this Network IP ; SoE=1:show this Network Broadcast IP */
+                if(SoE==1)                                                             
+                {                                                                                                         
+                        mask[i] = ~mask[i] + IP_AMOUNT_MAX;                            
+                        ip[i] = ip[i] | mask[i];                                       
+                }                                                                      
+                else                                                                   
+                        ip[i] = ip[i] & mask[i];                                       
+        }                                                                              
+        return ip.join(".");                                                           
+    }  
+    function nextpage()
+    {
+        document.internetset.autodetect.value = "off"
+        if(document.internetset.wanlinkWay.value == "static")
+        {
+            selectchange(document.internetset.wanlinkWay.value);
+            if(!cbi_validate_form(document.internetset, null,showerror))
+            {
+                return false;
+            }
+            
+            var lan_ip = "<%=uci_t:get("network","lan","ipaddr")%>";
+            var nm = "<%=uci_t:get("network","lan","netmask")%>";
+            var net_1, net_2, net_3, net_4;
+            net_1 = netOrBroadAddr($("#staticIp").val(), nm, 0);
+            net_2 = netOrBroadAddr(lan_ip, nm, 0);
+            net_3 = netOrBroadAddr($("#staticIp").val(), $("#staticNetmask").val(), 0);
+            net_4 = netOrBroadAddr(lan_ip, $("#staticNetmask").val(), 0);
+            if(net_1==net_2 || net_3 == net_4 )
+            {
+                showerror("<%:wanip_lanip_same_subnet%>");
+                return false;
+            }
+
+            if($("#staticIp").val() == $("#staticGateway").val()){
+                showerror("<%:ipaddr_gateway_same%>");
+                return false;
+            }
+
+            var ipnet1, ipnet2;
+            ipnet1 = netOrBroadAddr($("#staticIp").val(), $("#staticNetmask").val(), 0);
+            ipnet2 = netOrBroadAddr($("#staticGateway").val(), $("#staticNetmask").val(), 0);
+            if(ipnet1 != ipnet2){
+                showerror("<%:ipaddr_gateway_same_subnet%>");
+                return false;
+            }
+            
+            dnscheck();
+            if(!cbi_validate_form(document.internetset, null,showerror))
+            {
+                return false;
+            }
+            if($("#staticPriDns").val() == $("#staticIp").val()){
+                showerror("<%:dns_ipaddr_same%>");
+                return false;
+            }
+            setTimeout("save()", 200);
+        }
+        else
+        {
+            selectchange(document.internetset.wanlinkWay.value);
+            if(!cbi_validate_form(document.internetset, null,showerror))
+            {
+                return false;
+            }
+            setTimeout("save()", 200);
+        }
+    }
+    
+	function find_pppoe_passwd_page()
+	{
+
+	        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "find_pwd_page")%>";
+	}
+
+
+
+    function showerror(errmsg)
+    {
+        alert(errmsg);
+    }
+    <% if "0" == firststart then %>
+    $("#back2link").click(function(){
+        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "link")%>";
+    });
+    <% end %>
+</script>
+</html>

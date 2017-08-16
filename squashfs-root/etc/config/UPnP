@@ -1,0 +1,2 @@
+config upnpd 'config'
+	option enable '1'

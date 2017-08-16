@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<% 
+local uci_t = luci.model.uci.cursor()
+local ssid = nil
+local key = nil
+local inic_ssid = nil
+local inic_key = nil
+local password = nil
+   
+uci_t:foreach("wireless", "wifi-iface",
+    function(s)
+        if s.ifname == "ra0" then
+            if s.ssid then
+                ssid = s.ssid
+            end
+        end
+        if s.ifname == "ra0" then
+            if s.key then
+                key = s.key
+            end
+        end
+
+        if s.ifname == "rai0" then
+            if s.ssid then
+                inic_ssid = s.ssid
+            end
+        end
+   
+        if s.ifname == "rai0" then
+            if s.key then
+                inic_key = s.key
+            end
+        end
+    end)
+%>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/web_phone.css">
+    <script src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>  
+    <%+title%>
+</head>
+<body>
+    <div class="setcontent" id="sys_status" style="height: 100%;">
+        <div class="img_phiwifi">
+            <img src="<%=media%>/images/phiwifi_color.png" />
+        </div>    
+        <div class="margintop-5" style="height: 45%;">
+            <img class="width-100" style="height: 100%;" src="<%=media%>/images/wxsz.jpg"/>
+        </div>
+        <div>
+            <div class="margintop-5" style="text-align: left; padding-left: 1%;">当前无线将会断开，请重新连接无线网络</div>
+            <div class="set-linediv">
+                <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon" style="background-color: #F5F5F5;">2.4G 无线名称</span>
+                    <input type="text" class="form-control" readonly="readonly" value="<%=ssid%>" style="background-color: #F5F5F5;color: #A6A6A6;" />
+                </div>
+                <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon" style="background-color: #F5F5F5;">2.4G 无线密码</span>
+                    <input type="text" class="form-control" readonly="readonly" value="<%=key%>" style="background-color: #F5F5F5;color: #A6A6A6;" />
+                </div>    
+                <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon" style="background-color: #F5F5F5;">5G 无线名称</span>
+                    <input type="text" class="form-control" readonly="readonly" value="<%=inic_ssid%>" style="background-color: #F5F5F5;color: #A6A6A6;text-indent: 1em;" />
+                </div>    
+                <hr />
+                <div class="input-group input-r">
+                    <span class="input-group-addon" style="background-color: #F5F5F5;">5G 无线密码</span>
+                    <input type="text" class="form-control" readonly="readonly" value="<%=inic_key%>" style="background-color: #F5F5F5;color: #A6A6A6;text-indent: 1em;" />
+                </div>    
+                <hr />
+            </div>    
+        </div>
+    </div>
+</body>
+<script>
+    function internetok()
+    {
+        XHR.get('<%=luci.dispatcher.build_url("admin", "h5", "sohoping")%>',null,
+            function(x,s){
+                if(s)
+                {
+                    if(s[0].internetok == "success")
+                    {
+                        window.location.href="http://app.phiwifi.phicomm.com/Service/App/downloadpage/chanel/1H5W";
+                    }
+                    else if(s[0].internetok == "fail")
+                    {
+                        window.location.href="<%=luci.dispatcher.build_url("admin", "h5", "internetcheck")%>";
+                    }
+                }
+                else
+                {
+                    setTimeout("internetok()", 5000);
+                }
+            }
+        );    
+    }
+    setTimeout("internetok()", 30000);
+</script>
+</html>

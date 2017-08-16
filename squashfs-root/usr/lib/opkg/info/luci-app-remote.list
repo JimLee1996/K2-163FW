@@ -1,0 +1,8 @@
+/etc/init.d/remote
+/etc/config/remote
+/usr/lib/lua/luci/controller/admin/remote.lua
+/etc/uci-defaults/luci-remote
+/usr/lib/lua/luci/i18n/remote.zh-cn.lmo
+/usr/lib/lua/luci/view/remote.htm
+/etc/hotplug.d/iface/75-remote
+/etc/nvram2uci/remote

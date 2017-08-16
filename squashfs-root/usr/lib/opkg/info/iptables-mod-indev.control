@@ -1,0 +1,12 @@
+Package: iptables-mod-indev
+Version: 1.4.21-1
+Depends: libc, iptables, kmod-ipt-indev
+Source: package/network/utils/iptables
+Section: net
+Architecture: ramips_24kec
+Installed-Size: 1484
+Description:  iptables extensions for indev matching
+ 
+ Matches:
+ - indev
+ 

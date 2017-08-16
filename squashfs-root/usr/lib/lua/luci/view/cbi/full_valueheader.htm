@@ -1,0 +1,22 @@
+<%
+	local disp = require "luci.dispatcher"	
+	local request = disp.context.request
+	local phicomm_lua = require "phic"
+%>
+<div class="cbi-value <% if self.error and self.error[section] then %> cbi-value-error<% end %><% if self.last_child then %> cbi-value-last<% end %>" id="cbi-<%=self.config.."-"..section.."-"..self.option%>" style="<% if self.show_flag or self.show_readglass or self.show_help then %>float:left;<% end %> clear:both;<% if self.display=='none' then %> display:none;<%end%>">
+
+	<%- if self.title and #self.title > 0 and not self.hide_label then -%>
+		<% if self.centerclass == "no_margin_left" then  %>
+		<div class="height_45 <%if self.secondtitle then%> second_title_margin <%end%>">
+		<% elseif self.centerclass == "no_margin_left200" then  %>
+		<div class="height_45 margin_left20">
+		<% else %>
+		<div class="height_45">
+		<%end%>
+    <label class="<% if self.secondtitle then%>cbi_second_title <%elseif self.advance_second_title then%>cbi_advance_second_title <%else%> 
+    <% if #request > 0 and request[2] == 'networkset' or request[2] == 'wifiset' then %>link_span<%else%> link_span_advance <%end%> <%end%>"<%= attr("for", cbid) %> <% if self.orangeclass then %> style="color:#F08300;margin-right:25px;"<% end %>>
+	<%- if self.titleref then -%><a title="<%=self.titledesc or translate('Go to relevant configuration page')%>" class="cbi-title-ref" href="<%=self.titleref%>"><%- end -%>
+		<%-=self.title-%>
+	<%- if self.titleref then -%></a><%- end -%>
+	</label>
+	<%- end -%>

@@ -1,0 +1,11 @@
+/usr/lib/lua/luci/view/quickguide/find_pwd.htm
+/usr/lib/lua/luci/view/quickguide/welcome.htm
+/etc/nvram2uci/quickguide
+/usr/lib/lua/luci/controller/admin/quickguide.lua
+/etc/init.d/wan_internet_type_detect
+/etc/pppoe-passwd
+/usr/lib/lua/luci/view/quickguide/internet_setting.htm
+/usr/lib/lua/luci/view/quickguide/wireless_setting.htm
+/usr/lib/lua/luci/i18n/quickguide.zh-cn.lmo
+/usr/bin/wan_internet_type_detect.sh
+/usr/lib/lua/luci/view/quickguide/quickguide_finish.htm

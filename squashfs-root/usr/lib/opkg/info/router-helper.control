@@ -1,0 +1,14 @@
+Package: router-helper
+Version: 1
+Depends: libc, libubox, libuci, libpthread, phicomm_libs, libubus, jshn
+Source: package/phicomm/router-helper
+Section: Phicomm Properties
+Architecture: ramips_24kec
+Installed-Size: 9252
+Description:  一个统一管理路由状态的工具，包含网络，硬件接口及其他可能需要的各种状态操作
+ 1.获取路由网络连通状态
+ 2.获取wan口物理连接状态
+ 3.获取wan口上下行速率
+ 4.获取wisp连接状态
+ 5.获取pppd拨号状态
+ 6....

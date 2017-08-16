@@ -1,0 +1,10 @@
+Package: kmod-hw_wdg
+Version: 3.10.14-1
+Depends: kernel (=3.10.14-1-4e11e1c8ad18f79fa8728ce2ca3ed137)
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ramips_24kec
+Installed-Size: 105
+Description:  MTK APSoC Watchdog Driver

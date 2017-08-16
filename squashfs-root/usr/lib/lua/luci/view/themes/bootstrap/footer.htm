@@ -1,0 +1,117 @@
+<%#
+    Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+
+    DISCREPTION   : LuCI - Lua Configuration Interface - common footer
+    AUTHOR        : chengjun.tao <chengjun.tao@phicomm.com.cn>
+    CREATED DATE  : 2016-04-26
+    MODIFIED DATE : 
+-%>
+
+<%
+	local disp = require "luci.dispatcher"	
+	local request = disp.context.request
+	require "luci.fs"
+	require "luci.phicommproduct"
+	local uci_t = require "luci.model.uci".cursor()
+	
+	data ={                           
+            wan         = {}                     
+            } 
+	local has_network = luci.fs.stat("/etc/config/network")
+	
+	if has_network then
+        data.wan.ifname        = uci_t:get("network","wan","ifname")    
+        if data.wan.ifname == "apcli0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apcli0 | grep HWaddr | cut -c 39-55") 
+        elseif data.wan.ifname == "apclii0"    then
+            data.wan.macaddr    = luci.sys.exec("ifconfig apclii0 | grep HWaddr | cut -c 39-55") 
+        else   
+            if uci_t:get("network","wan", "ignore") == "1" then
+                data.wan.macaddr    = uci_t:get("network","wan","macaddr")
+            else
+                data.wan.macaddr    = uci_t:get("network","wan","mac_addr")
+            end
+        end
+
+        data.wan.proto        = uci_t:get("network","wan","proto")
+    else
+        data.wan.macaddr    = "00:00:00:00:00:00" 
+    end
+	
+	function get_wan_mac()                                                                  
+    	local mac = "00:00:00:00:00:00"   
+
+    	if data.wan.macaddr then
+       	 mac = data.wan.macaddr          
+    	end                                                
+    return mac    
+end
+	local has_pc1_pic = luci.fs.stat("/tmp/adpush/pic_pc1.png")
+	local has_pc1_adlink = luci.fs.stat("/tmp/adpush/adlink_pc1")
+	local has_pc2_pic = luci.fs.stat("/tmp/adpush/pic_pc2.png")
+	local has_pc2_adlink = luci.fs.stat("/tmp/adpush/adlink_pc2")
+	local server_name = luci.http.getenv("SERVER_NAME")
+	local uci_state = luci.model.uci.cursor_state()
+	local lanip = uci_state:get("network","lan","ipaddr")
+	local adshow = 0
+
+	if server_name == lanip or server_name == "p.to" or server_name == "phicomm.me" then
+		adshow = 1
+	end
+%>
+
+<% if #request > 0 and request[2] ~= "index" and request[2] ~= "networkset" and request[2] ~= "wifiset" and request[2] ~= "device_manage" then %>
+			</div> <!-- end col  9 -->
+		</div>  
+	</div><!-- end col 10 -->
+	<div class="body_right">
+	<% if has_pc2_pic and adshow == 1 then %>
+		<% if has_pc2_adlink then %>
+		<a href="http://<%=server_name%>:8082/adlink_pc2">
+		<% end %>
+			<img src="http://<%=server_name%>/adpush/pic_pc2.png" >
+		<% if has_pc2_adlink then %>
+		</a>
+		<% end %>
+	<% end %>
+	</div>
+</div>
+<% else%>
+
+<% end %>
+<!-- fotter -->
+<% if #request > 0 and request[2] ~= "index" then %>
+	<% if has_pc1_pic and adshow == 1 then %>
+	<div <% if request[2] == "networkset" or request[2] == "wifiset" or request[2] == "device_manage" then %> class="ad_div_left_cbi" <% else %> class="ad_div_left" <% end %>>
+		<% if has_pc1_adlink then %>
+		<a href="http://<%=server_name%>:8082/adlink_pc1">
+		<% end %>
+			<img src="http://<%=server_name%>/adpush/pic_pc1.png" >
+		<% if has_pc1_adlink then %>
+		</a>
+		<% end %>
+	</div>
+	<% end %>
+	<% if has_pc2_pic and adshow == 1 then %>
+	<div <% if request[2] == "networkset" or request[2] == "wifiset" or request[2] == "device_manage" then %> class="ad_div_right_cbi" <% else %> class="ad_div_right" <% end %>>
+		<% if has_pc2_adlink then %>
+		<a href="http://<%=server_name%>:8082/adlink_pc2">
+		<% end %>
+			<img src="http://<%=server_name%>/adpush/pic_pc2.png" >
+		<% if has_pc2_adlink then %>
+		</a>
+		<% end %>
+	</div>
+	<% end %>
+<% end %>
+	<div class="fix_qrcode_div" style="right: 47px;">
+		<img src="<%=media%>/images/phico.png"/>
+		<span class="footer_qrcode_span" style="right: 56px;">扫一扫,下载APP</span>
+	</div>
+	<div class="footer_div">
+		<span>软件版本号：<%=pcdata(luci.phicommproduct.softversion)%></span>
+		<span>MAC地址：<%=get_wan_mac()%></span>
+		<span><%:phicomm license%></span>
+	</div>
+</body>
+</html>

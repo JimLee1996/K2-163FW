@@ -1,0 +1,282 @@
+<%+header%>
+<%
+function get_ver()
+    local uci = require("luci.model.uci").cursor()
+    return uci:get("system", "system", "fw_ver") or "0.0.0.0"
+end
+%>
+<%
+local uci = require("luci.model.uci").cursor()
+local up_time = uci:get("system","autoupgrade","up_time")or"02:00-03:00"
+local up_time_hour = string.sub(up_time,1,2)
+local up_time_min = string.sub(up_time,4,5)
+%>
+
+<% local uci_t = require "luci.model.uci".cursor() %>
+<script type="text/javascript" src="<%=media%>/js/advanced.js"></script>
+<script type="text/javascript" src="/luci-static/bootstrap/js/jquery.nicescroll.min.js"></script>
+<script type="text/javascript">
+    $(function(){
+        $('.content').niceScroll({
+            cursorcolor: "#CCCCCC",
+            cursoropacitymax: 1, 
+            touchbehavior: false, 
+            cursorwidth: "5px", 
+            cursorborder: "0", 
+            cursorborderradius: "5px",
+            autohidemode: false 
+        });
+    });
+</script>
+<!-- autoUpgrade -->
+<div class="setcontent advanced" id="autoupgradiv">
+    <div class="title-span"><span>自动升级</span></div>
+    <div class="title-underline"></div>
+    <div id="onlinediv">
+        <div class="setlinediv"> 
+            <span class="link-span3">在线升级：</span> 
+            <div class="setlinediv2">
+                <span class="link-span">当前固件版本：</span>
+                <span class="content-span"><%=get_ver()%></span>           
+            </div>
+        </div>
+        <div class="setlinediv"  id="checking" style="display: none;">
+            <div class="setlinediv2 margintop-15">
+                <span class="icon-break" style="display: none;"></span>
+                <span id="load_img"><img src="<%=media%>/images/load.gif" /></span>
+                <span id="check_answ">自动检测中......</span>
+            </div>            
+        </div>
+        <div class="setlinediv" id="checkVerDiv" style="display: none;">
+            <div class="setlinediv2" id="newVerDiv">
+                <span class="link-span" id="new_ver_text">最新固件版本：</span>
+                <span class="content-span" id="new_version"></span>         
+            </div>
+        </div>
+        <div id="update_info" style="display: none;margin: 0 5%;">
+            <div class="setlinediv2" style="height: 31px;">
+                <span id="update_mark" >更新内容：</span>    
+            </div>   
+            <div class="setlinediv2">
+                <span id="update_detaile" style="display: block;"></span>   
+            </div>                                      
+        </div>
+        <div class="setlinediv" id="btnDiv">
+            <div class="setlinediv2">
+                <button class="button-square-lg auto-btn" id="auto_btn" style="display: none;">在线升级</button>
+                <button class="button-square-lg auto-btn" id="recheck_btn">重新检测</button>
+            </div>            
+        </div>
+    </div>
+    <div class="title-underline opacity-underline" style="margin-top: 30px;margin-bottom: 20px;"></div>
+    <div  id="selfDefDiv">
+        <div class="setlinediv">
+            <span class="link-span3">自定义升级时间：</span>
+            <div class="radiodiv">
+                <img class="radioSwitch setval showOrHide" name="autoUpgrade" value="1" <%if mode == "1" then%>src="<%=media%>/images/icon_radio_on.png"<%end%>src="<%=media%>/images/icon_radio_off.png" />
+                <span>开启</span> 
+            </div>
+            <div class="radiodiv">
+                <img class="radioSwitch setval showOrHide" name="autoUpgrade" value="0" <%if mode == "1" then%>src="<%=media%>/images/icon_radio_off.png"<%end%>src="<%=media%>/images/icon_radio_on.png" />
+                <span>关闭</span>
+            </div>                                  
+        </div> 
+        <div class="setlinediv contentDisplay" <%if mode == "0" then%>style="display: none;"<%end%>>
+            <div id="autoupgradeDiv" style="height: 45px;line-height: 43px;"> 
+                <span class="link-span3">升级时间：</span> 
+                <div class="dropdown dropdown_div" style="float:left;margin-left:10px;width: 50px;">
+                    <div class="dropdown_button" onclick="dropdown_click(this)" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 50px;">                     
+                        <input type="text" id="uptimehour" class="drop_input" readonly="readonly" onfocus="this.blur();" unselectable="on" value="<%=up_time_hour%>" style="width: 50px;">
+                        <span class="icon-downarrow"></span>
+                    </div>
+                    <ul class="dropdown-menu autoupgradeul" aria-labelledby="dLabel" style="min-width:50px;height: 104px;">
+                        <li id="0"><a value="00">00</a></li>
+                        <li id="1"><a value="01">01</a></li>
+                        <li id="2"><a value="02">02</a></li>
+                        <li id="3"><a value="03">03</a></li>
+                        <li id="4"><a value="04">04</a></li>
+                        <li id="5"><a value="05">05</a></li>
+                        <li id="6"><a value="06">06</a></li>
+                        <li id="7"><a value="07">07</a></li>
+                        <li id="8"><a value="08">08</a></li>
+                        <li id="9"><a value="09">09</a></li>
+                        <li id="10"><a value="10">10</a></li>
+                        <li id="11"><a value="11">11</a></li>
+                        <li id="12"><a value="12">12</a></li>
+                        <li id="13"><a value="13">13</a></li>
+                        <li id="14"><a value="14">14</a></li>
+                        <li id="15"><a value="15">15</a></li>
+                        <li id="16"><a value="16">16</a></li>
+                        <li id="17"><a value="17">17</a></li>
+                        <li id="18"><a value="18">18</a></li>
+                        <li id="19"><a value="19">19</a></li>
+                        <li id="20"><a value="20">20</a></li>
+                        <li id="21"><a value="21">21</a></li>
+                        <li id="22"><a value="22">22</a></li>
+                        <li id="23"><a value="23">23</a></li>
+                    </ul> 
+                </div>
+                <span style="line-height: 31px;float: left;margin-left:15px;margin-left:15px;width: 15px;text-align: right;">:</span>
+                <div class="dropdown dropdown_div" style="float:left;margin-left:0px;width: 50px;">
+                    <div class="dropdown_button" onclick="dropdown_click(this)" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="">             
+                        <input type="text" class="drop_input" id="uptimemin" readonly="readonly" onfocus="this.blur();" unselectable="on" value="<%=up_time_min%>" style="width: 50px;">
+                        <span class="icon-downarrow"></span>
+                    </div>
+                    <ul class="dropdown-menu autoupgradeul" aria-labelledby="dLabel" style="min-width:50px;height: 104px;">
+                        <li id="0"><a value="00">00</a></li>
+                        <li id="1"><a value="05">05</a></li>
+                        <li id="2"><a value="10">10</a></li>
+                        <li id="3"><a value="15">15</a></li>
+                        <li id="4"><a value="20">20</a></li>
+                        <li id="5"><a value="25">25</a></li>
+                        <li id="6"><a value="30">30</a></li>
+                        <li id="7"><a value="35">35</a></li>
+                        <li id="8"><a value="40">40</a></li>
+                        <li id="9"><a value="45">45</a></li>
+                        <li id="10"><a value="50">50</a></li>
+                        <li id="11"><a value="55">55</a></li>
+                    </ul> 
+                </div>
+            </div>
+             <form name="save" id="save" action="<%=REQUEST_URI%>/save" method="post">
+                 <input type="hidden" name="mode" value="<%=mode%>" id="radio_val">
+                 <input id="autoUpTime" name="autoUpTime" type="hidden" value="" />
+             </form>
+        </div>  
+        <div class="setlinediv">
+            <div type="button" class="button-square-lg btndiv" id="AutoUpSave"><%:Save%></div>
+        </div>                                  
+    </div>
+</div><!-- end autoUpgrade -->                          
+<script language = "javascript">
+        function version_display(version,detaile){ //版本检测信息显示 
+            detaile = unescape(detaile.replace(/#x/g,'%u').replace(/;/g,''));
+            $("#new_version").html(version);
+            $("#update_detaile").html(detaile);
+        }   
+
+        function re_check(){
+            $.ajax({
+                type:"post",
+                url:"<%=luci.dispatcher.build_url("admin","more_sysset","autoupgrade","recheck")%>",
+                data:{
+                },
+                error: function(request){ 
+                    $("#check_answ").html("服务器错误");
+                    $("#checking").show(); 
+                    $("#load_img").hide();
+                    $(".icon-break").show();
+                    $("#checkVerDiv").hide();  
+                    $("#btnDiv").show(); 
+                    $("#update_info").hide();
+                    $("#btnDiv").show();
+                    $("#auto_btn").hide();
+                },
+                success: function(msg){
+                    if(msg.retstate == "0")
+                    {                                      
+                        $("#check_answ").html("网络错误");
+                        $("#checking").show(); 
+                        $("#load_img").hide();
+                        $(".icon-break").show();
+                        $("#checkVerDiv").hide();  
+                        $("#btnDiv").show(); 
+                        $("#update_info").hide();
+                        $("#btnDiv").show();
+                        $("#auto_btn").hide();
+                    }
+                    else if(msg.retstate == "1")
+                    {                                                     
+                        if(msg.errcode == "0"){  
+                            $("#checking").hide();                                              
+                            $("#checkVerDiv").show();
+                            $("#update_info").show();
+                            $("#btnDiv").show();
+                            $("#auto_btn").show();                                                                                     
+                            version_display(msg.version,msg.detaile);                                        
+                        }else{
+                            if(msg.errcode == "8804")
+                                $("#check_answ").html("当前已是最新版本");
+                            else if(msg.errcode == "8801")
+                                $("#check_answ").html("服务器繁忙");
+                            else if(msg.errcode == "8802")
+                                $("#check_answ").html("服务器错误");
+                            else if(msg.errcode == "8803")
+                                $("#check_answ").html("参数不合法");
+                            else
+                                $("#check_answ").html("服务器错误");
+
+                            $("#checking").show();
+                            $("#load_img").hide();
+                            $(".icon-break").show();
+                            $("#checkVerDiv").hide(); 
+                            $("#update_info").hide();
+                            $("#auto_btn").hide();                                   
+                            $("#btnDiv").show();
+                        }
+                    }
+                }
+            });
+        }           
+        
+        $(function(){
+            $(".autoupgradeul").find("li").click(function(){
+                var value = $(this).find("a").attr("value");
+                $(this).parents(".dropdown_div").find("input").val(value);
+            });
+            $("#recheck_btn").click(function(){ 
+                $("#btnDiv").hide();
+                $("#update_info").hide();
+                $("#check_answ").html("自动检测中......");
+                $("#checking").show();
+                $("#load_img").show();
+                $(".icon-break").hide();                                              
+                $("#checkVerDiv").hide();                                                                                     
+                re_check();
+            });
+
+            $("#auto_btn").click(function(){
+                $("#checking").show();
+                $("#load_img").show();
+                $(".icon-break").hide();
+                $("#checkVerDiv").hide();
+                $("#update_info").hide();
+                $("#wan_check_modal").find(".loading_msg_span").html("正在处理...");
+                $("#wan_check_modal").modal("show");
+                $.ajax({                                
+                    type:"post",
+                    url:"<%=luci.dispatcher.build_url("admin","more_sysset","autoupgrade","upgrade")%>",
+                    data:{
+                    },
+                    error: function(request){
+                        Alert("request fail");
+                        $("#wan_check_modal").modal("hide");
+                    },
+                    success: function(msg){ 
+                        $("#wan_check_modal").modal("hide");                                         
+                        if(msg.err == "0")
+                        {
+                            if(msg.upgrading == "1")
+                                start_progress_bar(100);
+                        }
+                        else
+                        {
+                            $("#check_answ").html(msg.err);
+                            $("#checkVerDiv").hide();
+                            $("#load_img").hide();
+                            $(".icon-break").show();
+                            $("#btnDiv").show();
+                            $("#update_info").hide();
+                        }
+                    }
+                });
+            });
+
+            $("#AutoUpSave").click(function(){
+                $("#wan_check_modal").modal("show");
+                $("#autoUpTime").val($("#uptimehour").val() + ":" + $("#uptimemin").val());
+                setTimeout(function(){document.save.submit();},1000);
+            });
+        });
+</script>
+<%+footer%>

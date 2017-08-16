@@ -1,0 +1,1674 @@
+﻿<%#
+Copyright (C) 2016. Shanghai Feixun Communication Co.,Ltd.
+
+DISCREPTION   : LuCI - Lua Configuration Interface - common header
+AUTHOR        : chengjun.tao <chengjun.tao@phicomm.com.cn>
+CREATED DATE  : 2016-04-26
+MODIFIED DATE : 
+-%>
+<%
+local sys  = require "luci.sys"
+local http = require "luci.http"
+local disp = require "luci.dispatcher"
+require "luci.fs"
+
+local hostname = sys.hostname()
+
+local request  = disp.context.path
+local request2 = disp.context.request
+
+local category = request[1]
+local thirdnode = request[3]
+local cattree  = category and disp.node(category)
+
+local leaf = request2[#request2]
+
+local tree = disp.node()
+local node = disp.context.dispatched
+
+local categories = disp.node_childs(tree)
+
+local c = tree
+local i, r
+
+local has_pc1_pic = luci.fs.stat("/tmp/adpush/pic_pc1.png")
+local has_pc1_adlink = luci.fs.stat("/tmp/adpush/adlink_pc1")
+local server_name = luci.http.getenv("SERVER_NAME")
+local uci_state = luci.model.uci.cursor_state()
+local lanip = uci_state:get("network","lan","ipaddr")
+local adshow = 0
+
+if server_name == lanip or server_name == "p.to" or server_name == "phicomm.me" then
+	adshow = 1
+end
+
+-- tag all nodes leading to this page
+for i, r in ipairs(request) do
+if c.nodes and c.nodes[r] then
+c = c.nodes[r]
+c._menu_selected = true
+end
+end
+
+-- send as HTML5
+http.prepare_content("text/html")
+
+local function nodeurl(prefix, name, query)
+local url = controller .. prefix .. name .. "/"
+
+if query then
+url = url .. http.build_querystring(query)
+end
+return pcdata(url)
+end
+
+local function subtree(prefix, node, level)
+if not level then
+level = 1
+end
+
+local childs = disp.node_childs(node)
+if #childs > 0 then
+
+if level > 2 then
+%>
+
+<%  
+end
+
+local selected_node
+local selected_name
+local i, v
+local temp
+
+for i, v in ipairs(childs) do
+local nnode = node.nodes[v]
+if nnode._menu_selected then
+selected_node = nnode
+selected_name = v
+end
+if level <= 1 then 
+%>
+<%
+    
+      temp = request[2]
+   if #request==3 then
+        if request[3]=="lanset" or request[3]=="dhcp" then
+            temp = "more_wanset"
+        elseif request[3]=="appportfwdset" or request[3]=="DMZset" or request[3]=="UPnPset" then
+            temp = "more_forward"
+        elseif request[2]=="more_sysset" then
+            temp = "more_sysset"
+        end
+    else
+
+    end
+%>
+<% if v == "more_sysstatus" then %>
+
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_sysstatus" style='<%if temp=="more_sysstatus" then%> border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-systemstate iconSpan"></span><span class="textSpan"><%:phicomm sysstatus%></span></div></a>
+</li>
+<% elseif v == "more_wanset" then %>
+
+<li>
+    <a class="up_down_a list_li1_a" href="#lanSetdhcpServer" data-toggle="collapse" style='<%if temp=="more_wanset" then%>border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-intranetset iconSpan"></span><span class="textSpan"><%:phicomm wanset%></span><span  class='<%if temp=="more_wanset" then%>icon-uparrow<%else%> icon-downarrow<%end%> up_down'  value='<%if temp=="more_wanset" then%>1<%else%>0<%end%>'></span></div></a>
+    <ul id="lanSetdhcpServer" class='nav nav-list collapse menu-second list_ul<%if temp=="more_wanset" then%> in<%end%>' <%if temp=="more_wanset" then%> aria-expanded="true" <%end%> >
+        <%subtree(prefix .. v .. "/", nnode, level + 1)%>
+    </ul>
+</li>
+<% elseif v == "more_signal" then %>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_signal" style='<%if temp=="more_signal" then%> border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_signal iconSpan"></span><span class="textSpan"><%:Signal Conditioning%></span></div></a>
+</li>
+<% elseif v == "more_wlextend" then %>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_wlextend" style='<%if temp=="more_wlextend" then%> border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_wlextend iconSpan"></span> <span class="textSpan">无线扩展</span></div></a>
+</li>
+<% elseif v == "more_wps" then%>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_wps" style='<%if temp=="more_wps" then%>border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_wps iconSpan"></span> <span class="textSpan">WPS设置</span></div></a>
+</li>
+<% elseif v == "more_parentctl" then%>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_parentctl" style='<%if temp=="more_parentctl" then%>border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_parentctl iconSpan"></span> <span class="textSpan">家长控制</span></div></a>
+</li>
+<% elseif v == "more_safeset" then%>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_safeset" style='<%if temp=="more_safeset" then%> border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_safeset iconSpan"></span> <span class="textSpan">安全设置</span></div></a>
+</li>
+<% elseif v == "more_remotemgt" then%>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_remotemgt" style='<%if temp=="more_remotemgt" then%> border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_remotemgt iconSpan"></span> <span class="textSpan">远程管理</span></div></a></li>
+<% elseif v == "more_ddns" then%>
+<li><a class="list_li1_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="more_ddns" style='<%if temp=="more_ddns" then%> border-left:3px solid #F08300;color:#F08300;background:#F8F8F8;<%end%>'><div><span class="icon-more_ddns iconSpan"></span> <span class="textSpan">动态DNS</span></div></a>
+</li>
+<% elseif v == "more_forward" then%>
+<li><a class="up_down_a list_li1_a" href="#forwardSet" data-toggle="collapse" style='<%if temp=="more_forward" then%>border-left:3px solid #F08300;color:#F08300;background:#F8F8F8<%end%>'><div><span class="icon-forwardset iconSpan"></span> <span class="textSpan">转发设置</span><span class='<%if temp=="more_forward" then%>icon-uparrow<%else%> icon-downarrow<%end%> up_down'  value='<%if temp=="more_forward" then%>1<%else%>0<%end%>'></span></div></a>
+    <ul id="forwardSet" class='nav nav-list collapse menu-second list_ul<%if temp=="more_forward" then%> in<%end%>' <%if temp=="more_forward" then%> aria-expanded="true" <%end%> >
+        <%subtree(prefix .. v .. "/", nnode, level + 1)%>
+    </ul>
+</li>
+<% elseif v == "more_sysset" then%>
+<li><a class="up_down_a list_li1_a" href="#systemSet"  data-toggle="collapse" style='<%if temp=="more_sysset" then%>border-left:3px solid #F08300;color:#F08300;background:#F8F8F8<%end%>'><div><span class="icon-systemset iconSpan"></span><span class="textSpan"><%:phicomm system setting%></span><span class='<%if temp=="more_sysset" then%>icon-uparrow<%else%> icon-downarrow<%end%> up_down' value='<%if temp=="more_sysset" then%>1<%else%>0<%end%>'></span></div></a>
+    <ul id="systemSet" class='nav nav-list collapse menu-second list_ul<%if temp=="more_sysset" then%> in<%end%>' <%if temp=="more_sysset" then%> aria-expanded="true" <%end%> >
+        <%subtree(prefix .. v .. "/", nnode, level + 1)%>
+    </ul>
+</li>
+<% end %>
+
+<% end %>
+
+<% if level >= 2 then %>                    
+<% if v == "lanset" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="lanset" style='<%if request[3]=="lanset" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-lanset iconSpan2"></span><span class="textSpan2"><%:phicomm lanset%></span></div></a></li>
+<% elseif v == "dhcp" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="dhcp" style='<%if request[3]=="dhcp" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-dhcp iconSpan2"></span><span class="textSpan2">DHCP服务</span></div></a></li>
+<% elseif v == "appportfwdset" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="appportfwdset" style='<%if request[3]=="appportfwdset" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-appportfwdset iconSpan2"></span><span class="textSpan2">端口转发</span></div></a></li>
+<% elseif v == "DMZset" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="DMZset" style='<%if request[3]=="DMZset" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-DMZset iconSpan2"></span><span class="textSpan2">DMZ主机</span></div></a></li>
+<% elseif v == "UPnPset" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="UPnPset" style='<%if request[3]=="UPnPset" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-UPnPset iconSpan2"></span><span class="textSpan2">UPnP设置</span></div></a></li>
+<% elseif v == "indicatorlight" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="indicatorlight" style='<%if request[3]=="indicatorlight" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-indicatorlight iconSpan2"></span><span class="textSpan2">指示灯</span></div></a></li>
+<% elseif v == "buttonset" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="buttonset" style='<%if request[3]=="buttonset" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-buttonset iconSpan2"></span><span class="textSpan2">按钮设置</span></div></a></li>
+<% elseif v == "APPset" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="APPset" style='<%if request[3]=="APPset" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-APPset iconSpan2"></span><span class="textSpan2"><%:phicomm application setting%></span></div></a></li>
+<% elseif v == "autoupgrade" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="autoupgrade" style='<%if request[3]=="autoupgrade" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-autoupgrade iconSpan2"></span><span class="textSpan2">自动升级</span></div></a></li>
+<% elseif v == "manualupgrade" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="manualupgrade" style='<%if request[3]=="manualupgrade" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-manualupgrade iconSpan2"></span> <span class="textSpan2">手动升级</span></div></a></li>
+<% elseif v == "backuprecovery" then%>
+<li style="border: 1px solid #E8E8E8"><a class="list_li2_a" href="<%=nodeurl(prefix, v, nnode.query)%>" id="backuprecovery" style='<%if request[3]=="backuprecovery" then%> color:#F08300;border:1px solid #EEEEEE;<%end%>'><div><span class="icon-backuprecovery iconSpan2"></span> <span class="textSpan2">备份恢复</span></div></a></li>
+<% end %>
+
+<% end %>
+<% end %>
+
+<% if level > 2 then %>
+
+<%          end
+
+if level > 2 then
+--subtree(prefix .. selected_name .. "/", selected_node, level + 1)
+end
+end
+end
+-%>
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, minimum-scale=0.3, maximum-scale=1, user-scalable=yes" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no"/>  
+    <%+title%> 
+    <link rel="stylesheet" href="<%=media%>/css/bootstrap.min.css">
+    <link rel="stylesheet" href="<%=media%>/css/style.css?date=2016-11-22">
+    <link rel="stylesheet" href="<%=media%>/css/cbi.css">
+    <link rel="stylesheet" href="<%=media%>/css/advanced.css">
+    <link rel="stylesheet" href="<%=media%>/css/index_style.css">
+    <link rel="stylesheet" href="<%=media%>/css/icon_fonts_style.css">
+    <script type="text/javascript" src="<%=media%>/js/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/function.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/base64Encode.js"></script>
+    <script type="text/javascript" src="<%=media%>/js/jquery.nicescroll.min.js"></script>
+    <script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+    <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+  
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="<%=media%>/js/html5shiv.js"></script>
+  <script src="<%=media%>/js/respond.min.js"></script>
+      <style type="text/css">
+        .bg{
+        background: #F5F5F5;
+      }
+    </style>
+  <![endif]-->
+
+  <% include("themes/" .. theme .. "/multlangjs") %>
+  <% include("themes/" .. theme .. "/detect") %>
+  <script >
+      media_path = "<%=media%>/";
+      no_clone_str = "<%:no clone%>";
+      auto_clone_str = "<%:auto clone%>";
+      input_clone_str = "<%:input clone%>";
+      cur_mac_addr_str = "<%:curent mac addr:%>";
+      <%
+      local uci = uci.cursor()
+      local password = uci:get("system", "weblogin", "password")
+      local timerebootstatus = uci:get("timereboot", "timereboot", "enable")
+      local timereboottime = uci:get("timereboot", "timereboot", "time")
+      local timereboothour = nil
+      local timerebootmin = nil
+      if not timereboottime then
+        timereboottime = "00:00"
+      end
+      timereboothour = string.sub(timereboottime,1,2)
+      timerebootmin = string.sub(timereboottime,4,5)
+      %>
+      var rebootneedrelogin = 0;
+      $(function(){
+          $('.content_body').niceScroll({
+              cursorcolor: "#CCCCCC",
+              cursoropacitymax: 1, 
+              touchbehavior: false, 
+              cursorwidth: "10px", 
+              cursorborder: "0", 
+              cursorborderradius: "5px",
+              autohidemode: false 
+          });
+          $('.content').niceScroll({
+              cursorcolor: "#CCCCCC",
+              cursoropacitymax: 1, 
+              touchbehavior: false, 
+              cursorwidth: "5px", 
+              cursorborder: "0", 
+              cursorborderradius: "5px",
+              autohidemode: false 
+          });
+          $("#restart").click(function(){
+              restart_flag = true;
+              $("#confirm_bt").html("确认");
+              Alert("是否确认重启？",true);
+              
+          })
+        $("#confirm_bt").click(function(){
+            $("#myAlert").modal("hide");
+            if(restart_flag == true){
+                restart_flag = false;
+                $("#confirm_bt").html("确定");
+                $.ajax({
+                    type:"post",
+                    url:"<%=luci.dispatcher.build_url("admin","system","reboot")%>",
+                    success: function(msg){
+                        $("#progress_content_up").html("设备重启中...");
+                        $("#progress_content_down").html("路由器重启中，请勿切断电源！");
+                        start_progress_bar(60);
+                        rebootneedrelogin = 1;
+                    }
+                });            
+            }
+            if(wps_refresh == true)
+            {
+               window.location.reload();
+            }
+        })
+        
+        $("#timeRebootEnable").click(function(){
+           var value =  $(this).attr("value");
+           if(value == 0){
+                $("#timeRebootDiv").css({opacity:"1",filter:"alpha(opacity=100)"});
+                $(this).attr("value","1");
+                $("#timeRebootEnablestatus").val("on");
+           }else{
+                $("#timeRebootDiv").css({opacity:"0",filter:"alpha(opacity=0)"});
+                $(this).attr("value","0") ;
+                $("#timeRebootEnablestatus").val("off");
+           }
+        })
+        $(".timeRebootUl").find("li").click(function(){
+            var value = $(this).find("a").attr("value");
+            $(this).parents(".dropdown_div").find("input").val(value);
+        })
+        
+        <% if timerebootstatus == "on" then%>
+            $("#timeRebootDiv").css({opacity:"1",filter:"alpha(opacity=100)"});
+        <%else%>
+            $("#timeRebootDiv").css({opacity:"0",filter:"alpha(opacity=0)"});
+        <%end%>
+        $("#timeRebootSave").click(function(){
+            $("#timeRebootrange").val($("#timereboothour").val() + ":" + $("#timerebootmin").val());
+            $("#cururl").val(location);
+            $("form[name='from_time_reboot']").submit();
+        })
+        
+      });
+var err_num = 0;
+var warn_num = 0;
+var router_frac = 100;
+var isCheckNet = 1;
+var time_stop;
+var time_stop_twice;
+var checkNUm = 0;
+var isCheck = 0;
+
+var currentVersion;    //当前软件版本
+var newVersion;        //最新软件版本
+var swPt;              //发布日期
+var sw_verdesc = "";  
+var str_load =".";
+var load_timer;
+function check_load(){
+    str_load = str_load +".";
+    if(str_load.length > 6){
+        str_load = ".";
+    }
+    $("#check_loading").html(str_load);
+}
+
+function set_default(){
+    clearTimeout(time_stop);
+
+    err_num = 0;
+    warn_num = 0;
+    router_frac = 100;
+    checkNUm = 0;
+    isCheckNet = 1;
+    isCheck = 0;
+    
+    $("#wan_fault_det").hide();
+    $("#wan_fault_det_ok").hide();  
+    $("#wan_fault_det_result").hide(); 
+    
+    $("#inte_status_det").hide();
+    $("#inte_status_det_ok").hide();  
+    $("#inte_status_det_result").hide(); 
+    
+    $("#wifi_status_det").hide();
+    $("#wifi_status_det_ok").hide();  
+    $("#wifi_status_det_result_2").hide(); 
+    $("#wifi_status_det_result_5").hide(); 
+    $("#wifi_status_det_result_sig").hide(); 
+    
+    $("#wifi_pwd_det").hide();
+    $("#wifi_pwd_det_ok").hide();  
+    $("#wifi_pwd_det_result_2").hide(); 
+    $("#wifi_pwd_det_result_5").hide(); 
+    
+    $("#router_pwd_det").hide();
+    $("#router_pwd_det_ok").hide();  
+    $("#router_pwd_det_result").hide(); 
+    
+    $("#firmware_ver_det").hide();
+    $("#firmware_ver_det_ok").hide();  
+    $("#firmware_ver_det_result").hide();
+    $("#title1").show();
+    $("#title2").hide();
+    $("#fault_det").hide();
+    $("#sys_alert").hide();
+}
+
+function begin_check()
+{
+    clearTimeout(time_stop);
+    clearTimeout(time_stop_twice);
+    err_num = 0;
+    warn_num = 0;
+    router_frac = 100;
+    checkNUm = 0;
+    isCheckNet = 1;
+    isCheck = 1;
+    
+    $("#wan_fault_det").hide();
+    $("#wan_fault_det_ok").hide();  
+    $("#wan_fault_det_result").hide(); 
+    
+    $("#inte_status_det").hide();
+    $("#inte_status_det_ok").hide();  
+    $("#inte_status_det_result").hide(); 
+    
+    $("#wifi_status_det").hide();
+    $("#wifi_status_det_ok").hide();  
+    $("#wifi_status_det_result_2").hide(); 
+    $("#wifi_status_det_result_5").hide(); 
+    $("#wifi_status_det_result_sig").hide(); 
+    
+    $("#wifi_pwd_det").hide();
+    $("#wifi_pwd_det_ok").hide();  
+    $("#wifi_pwd_det_result_2").hide(); 
+    $("#wifi_pwd_det_result_5").hide(); 
+    
+    $("#router_pwd_det").hide();
+    $("#router_pwd_det_ok").hide();  
+    $("#router_pwd_det_result").hide(); 
+    
+    $("#firmware_ver_det").hide();
+    $("#firmware_ver_det_ok").hide();  
+    $("#firmware_ver_det_result").hide(); 
+    
+  XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_checkistimeout")%>',null,
+    function(x,s)
+    {
+      if(s == "timeout")
+        location.href = location.href;
+      else
+      {
+        $("#title1").hide();
+        $("#title2").show();
+        $("#title2span").html("<%:phicomm checking%>");
+        load_timer=setInterval(check_load,500);
+        $("#score").show();
+        $("#title2span").removeAttr("style");
+        $("#score").css("background",'url("<%=media%>/images/oncheckload.gif") no-repeat');
+        $("#score").html(router_frac);
+        $("#fault_det").show();
+        $("#sys_alert").show();
+        time_stop = setTimeout("fun_sys_error_1()", 2000);
+      }
+    });
+}
+
+var progress_bar_cur_num=0;
+var progress_bar_timer;
+      
+function checklocation()
+{
+    if(1 == rebootneedrelogin)
+    {
+        rebootneedrelogin = 0;
+        var curlanip = "<%=uci:get("network","lan", "ipaddr")%>";
+        window.location.href = "http://" + curlanip;
+    }
+}
+      
+function Progress_Bar_Modalhide(){
+
+    $("#close_progress_button").click();
+    <% if restore_avail or upgrading then %>
+    var lanip = "<%=uci:get("network","lan", "ipaddr")%>";
+    window.location.href = "http://" + lanip;
+    <% elseif reset_process then %>
+    var lanip = "<%=uci:get("factory","default_ip","ip")%>";
+    window.location.href = "http://" + lanip;
+    <% else%>
+        checklocation();
+    <% end %>
+}
+function start_progress_bar(progress_bar_time){
+    $("#progress_bar_buttom").click();
+    $("#progress_bar").attr("style","width:0px");
+    $("#progress_bar").animate({width:$("#progress_bar").attr("w")+"px"},progress_bar_time*1100,function(){
+    	<% if reset_process then %>
+    	var lanip = "<%=uci:get("factory","default_ip","ip")%>";
+		changeDomain(lanip);
+		<% end %>
+		lanDetecting(Progress_Bar_Modalhide);
+    });
+    
+}
+function check_version(){
+    <%
+        local uci = uci.cursor()
+    %>
+    var pop_upgrade=<%=uci:get("onekeyupgrade","config","pop_upgrade") or "0"%>;
+
+    if((pop_upgrade == 1) || (pop_upgrade == 2))
+    {
+        XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_checkversion")%>',null,
+            function(x,s){
+                if(s[0].retstate == 1)
+                {
+                    if(s[0].VerNum == 1)
+                    {
+                        newVersion = s[0].version;        //最新软件版本
+                        swPt = s[0].pubtime;             //发布日期
+                        if(s[0].versiondesc)
+                            sw_verdesc = s[0].versiondesc;
+                        currentVersion = s[0].CurNum;    //当前软件版本
+
+                        sw_verdesc = unescape(sw_verdesc.replace(/#x/g,'%u').replace(/;/g,''));
+                        $("#onecheck_list").click();
+                        $("#upgrade_button").click();
+
+                        $("#sw_alert1").html(currentVersion);
+                        $("#sw_alert2").html(newVersion);
+                        $("#sw_alert3").html(swPt);
+                        $("#sw_alert4").html(sw_verdesc);
+                    }
+                }
+            }
+        );
+    }
+}
+
+$(function(){
+    check_version();
+
+    $("#onekeycheck_button").click(function(){
+        $("#onekeycheck_button").hide();
+        $("#onecheckmodal_body_1_div").show();
+        
+        begin_check();
+    });
+    
+    $(".onecheck_close").click(function(){
+        clearTimeout(time_stop);
+        time_stop_twice = setTimeout("clear_onecheck_close()", 2000);
+        set_default();
+        $("#onekeycheck_button").show();
+
+        $("#onekeycheck_button").html("<%:phicomm begin check%>");
+
+        clearTimeout(load_timer);
+        $("#check_loading").html("");
+        $("#onecheckmodal_body_1_div").hide();
+
+    });
+    
+    $("#save_pwd").click(function(){
+        var str_pwd_old = $("#pwd_old").val();
+        var str_pwd_new1 = $("#pwd_new1").val();
+        var str_pwd_new2 = $("#pwd_new2").val();
+        
+        if(str_pwd_old == "" || str_pwd_old.length == 0)
+        {
+            $("#error_msg").show();   
+            $("#error_msg").html("<%:index old pwd empty%>");
+        }
+        else if( base64encode(utf16to8(str_pwd_old)) != "<%=password%>")
+        {
+            $("#error_msg").show();   
+            $("#error_msg").html("<%:phicomm old pwd error%>");
+        }
+        else if(str_pwd_new1 == "" || str_pwd_new1.length == 0)
+        {
+            $("#error_msg").show();   
+            $("#error_msg").html("<%:index new pwd empty%>");
+        }
+        else if(str_pwd_new2 == "" || str_pwd_new2.length == 0)
+        {
+            $("#error_msg").show();   
+            $("#error_msg").html("<%:index query pwd empty%>");
+        }
+        else if(str_pwd_new1 != str_pwd_new2){
+            $("#error_msg").show();   
+            $("#error_msg").html("<%:phicomm new pwd not same%>");
+        }
+        else if(str_pwd_new1 == str_pwd_old){
+            $("#error_msg").show();   
+            $("#error_msg").html("<%:phicomm old and new pwd are same%>");
+        }
+        else
+        {
+            var v = str_pwd_new1
+            var error = 0;
+            
+            if( v.length == 64 )
+            {
+                if(v.match(/^[a-fA-F0-9]{64}$/) == null)
+                {
+                    error = 1;
+                }
+            }
+            else
+            {
+                if((v.length >= 5) && (v.length <= 63))
+                {
+                    for(var i = 0; i < v.length; i++)
+                    {
+                        if(v.charAt(i) < ' ' || v.charAt(i) > '~')
+                        {
+                            error = 1;                            
+                            break;
+                        }
+                        
+                        if(v.charAt(i).match(/[\u00B7]/)
+                            || v.charAt(i).match(/[\u0022]/) || v.charAt(i).match(/[\u0026]/)
+                            || v.charAt(i).match(/[\u003E]/) || v.charAt(i).match(/[\u003C]/)//<>
+                            || v.charAt(i).match(/[\u005C]/) || v.charAt(i).match(/[\u0027]/)
+                            || v.charAt(i).match(/[\u0028]/) || v.charAt(i).match(/[\u0029]/)//()
+                            || v.charAt(i).match(/[\u007B]/) || v.charAt(i).match(/[\u007D]/)//{}
+                            || v.charAt(i).match(/[\u0025]/)
+                            || v.charAt(i).match(/[\u003A]/) || v.charAt(i).match(/[\u003B]/)//:;
+                            || v.charAt(i).match(/[\u002C]/)//,
+                            || v.charAt(i).match(/[\u0024]/)//$
+                            || v.charAt(i).match(/[\u007C]/)//|
+                            || v.charAt(i).match(/[\u0060]/)//`
+                            || v.charAt(i).match(/[\u007E]/)//~
+                            || v.charAt(i).match(/[\u0026]/))//&
+                        { 
+                            error = 2;                            
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    error = 1;
+                }
+            }
+
+               if(1 == error)
+            {
+                $("#error_msg").html("<%:multlangjs_5_63asc_8_64hex%>");
+                $("#error_msg").show();
+            }
+            else if(2 == error)
+            {
+                $("#error_msg").html(error_msg[31][1]);
+                $("#error_msg").show();
+            }
+            else
+            {
+                $("#pwd_new1").val(base64encode(utf16to8(str_pwd_new1)));
+                $("form[name='frm_change_pwd']").submit();
+            }
+        }
+            
+        
+    });
+    
+    $("#wanlink_up").click(function(){
+        XHR.get('<%=luci.dispatcher.build_url("admin", "index", "get_phy_connect", "wan")%>',null,
+            function(x,s)
+            {
+                if(s[0].phy_connect == 1)
+                {
+                    $("#wan_fault_det_result").hide();
+                    $("#wan_fault_det_ok").show();
+                    router_frac = router_frac + 15;
+                    err_num = err_num - 1;
+                    $("#score").html(router_frac);
+                    if (isCheckNet == 0 && checkNUm == 5)
+                        $("#title2span").html("<%:phicomm discovery%><span style='color:#F08300;'>"+err_num+"</span><%:phicomm num error%><span style='color:#F08300;'>"+warn_num+"</span><%:phicomm num warning%>");
+                }
+                else
+                {
+                    $("#wan_fault_det_ok").hide();
+                    $("#wan_fault_det_result").show();
+                }
+            }
+            );    
+    });
+
+    $("#network_list").click(function(){
+        window.location.href = "<%=luci.dispatcher.build_url("admin", "networkset")%>";   
+    });
+
+    $(".wifi_list").click(function(){
+        window.location.href = "<%=luci.dispatcher.build_url("admin", "wifiset")%>";   
+    });
+
+    $("#signal_en").click(function(){
+        window.location.href = "<%=luci.dispatcher.build_url("admin", "more_signal")%>";   
+    });
+
+    $("#pwd_list").click(function(){
+        $("#onecheck_list").click(); 
+        $("#change_pwd").click();   
+    });
+
+    $("#update_button").click(function(){
+        sw_verdesc = unescape(sw_verdesc.replace(/#x/g,'%u').replace(/;/g,''));
+        $("#onecheck_list").click(); 
+        $("#upgrade_button").click();
+
+        $("#sw_alert1").html(currentVersion);
+        $("#sw_alert2").html(newVersion);
+        $("#sw_alert3").html(swPt);
+        $("#sw_alert4").html(sw_verdesc);
+    });
+
+    $("#savebackup").click(function(){     //一键升级
+        $("#upgrade_button").click();
+        $("#wan_check_modal").find(".loading_msg_span").html("正在处理...");
+        $("#wan_check_modal").modal("show");
+        upgrade_pop_close(doOnekeyUpgrade);
+    });
+    
+    $("#cancelbackup").click(function(){
+        upgrade_pop_close();
+    });
+    
+    $("#change_pwd").click(function(){
+        $("#error_msg").hide();   
+    });
+});
+
+function upgrade_pop_close(callback)
+{
+    var pop_upgrade=<%=uci:get("onekeyupgrade","config","pop_upgrade") or "0"%>;
+
+    if(pop_upgrade == 1 || pop_upgrade == 2)
+    {
+        XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_upgrade_pop")%>',null,
+            function(x,s){
+                callback && callback();
+            }
+        );
+    }
+}
+if (!Array.prototype.indexOf){  
+        Array.prototype.indexOf = function(elt /*, from*/){  
+        var len = this.length >>> 0;  
+        var from = Number(arguments[1]) || 0;  
+        from = (from < 0)  
+             ? Math.ceil(from)  
+             : Math.floor(from);  
+        if (from < 0)  
+          from += len;  
+        for (; from < len; from++)  
+        {  
+          if (from in this &&  
+              this[from] === elt)  
+            return from;  
+        }  
+        return -1;  
+      };  
+} 
+
+function doOnekeyUpgrade()
+{
+    document.frm_OneKey.submit();
+}
+
+function clear_onecheck_close()
+{
+    clearTimeout(time_stop);
+}
+
+function fun_sys_error_1()
+{
+    checkNUm = checkNUm + 1;
+    XHR.get('<%=luci.dispatcher.build_url("admin", "index", "get_phy_connect", "wan")%>',null,
+        function(x,s)
+        {
+            if( !isCheck )
+                return;
+            if (s[0].phy_connect == 1)
+            {
+                $("#wan_fault_det").show();
+                $("#wan_fault_det_ok").show();
+                time_stop = setTimeout("fun_sys_error_2()", 1000);
+            }
+            else
+            {
+                $("#wan_fault_det").show();
+                        $("#wan_fault_det_result").show();  //WAN口未连接
+                        err_num = err_num + 1;
+                        router_frac = router_frac - 30;
+                        isCheckNet = 0;
+                        $("#score").html(router_frac);
+                        time_stop = setTimeout("fun_sys_error_3()", 2000);
+                    }
+                }
+                );
+}
+
+function fun_sys_error_2()
+{
+    checkNUm = checkNUm + 1;
+    XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_InternetCheck")%>',null,
+        function(x,s)
+        {
+            if( !isCheck )
+                return;
+            if(s[0].PingQQ == 1)
+            {
+                    //可以Ping通QQ
+                    $("#inte_status_det").show();
+                    $("#inte_status_det_ok").show();
+                    time_stop = setTimeout("fun_sys_error_3()", 2000);
+                }
+                else  //不可以Ping通QQ
+                {
+                    $("#inte_status_det").show();
+                    $("#inte_status_det_result").show(); 
+                    if(s[0].NetworkType == 2)  //静态IP问题
+                    {
+                        //静态IP问题
+                        $("#inte_status_det_result").find("span").html("<%:phicomm static ip error%>");
+                    }
+                    else if(s[0].NetworkType == 1) //PPPOE问题
+                    {
+                        if(s[0].WanIp == 0)   //WAN口无IP
+                        {
+                            if(s[0].ErrorCode == 709)
+                            {
+                                //PPPOE密码太短或者不匹配
+                                $("#inte_status_det_result").find("span").html("<%:phicomm pppoe pwd too small or dismatch%>");
+                            }
+                            else if(s[0].ErrorCode == 691)
+                            {
+                                //PPPOE密码错误或者账号到期
+                                $("#inte_status_det_result").find("span").html("<%:phicomm pppoe pwd error or expired%>");
+                            }
+                            else if(s[0].ErrorCode == 678)
+                            {
+                                //运营商服务器升级或者网线松动
+                                $("#inte_status_det_result").find("span").html("<%:phicomm SIP updata or rj45 link down%>");
+                            }
+                            else if(s[0].ErrorCode == 646 || s[0].ErrorCode == 647 || s[0].ErrorCode == 648 || s[0].ErrorCode == 649)
+                            {
+                                //PPPOE账号无法使用，错误代码XXX
+                                $("#inte_status_det_result").find("span").html("<%:phicomm errorcode%>"+s[0].ErrorCode+"<%:phicomm connect sip%>");                                
+                            }
+                            else if(s[0].ErrorCode == 1)
+                            {
+                                //PPPOE正在拨号
+                                $("#inte_status_det_result").find("span").html("<%:phicomm pppoe calling%>");                                    
+                            }
+                            else
+                            {
+                                //PPPOE请求发出无响应
+                                $("#inte_status_det_result").find("span").html("<%:phicomm pppoe no response%>");    
+                            }
+                        }
+                        else   //WAN口有IP
+                        {
+                            if(s[0].PingWan == 0)  //不能PING通WAN侧网关IP
+                            {
+                                //重启或MAC克隆
+                                $("#inte_status_det_result").find("span").html("<%:phicomm restart or mac clone%>");    
+                            }
+                            else  //能PING通WAN侧网关IP
+                            {
+                                if(s[0].DNS == 0)
+                                {
+                                    //DNS地址不存在
+                                    $("#inte_status_det_result").find("span").html("<%:phicomm no dns%>");
+                                }
+                                else if(s[0].DNS == 1)
+                                {
+                                    // DNS地址存在
+                                    $("#inte_status_det_result").find("span").html("<%:phicomm has dns%>");
+                                }
+                                else
+                                {
+                                    // DNS地址自定义
+                                    $("#inte_status_det_result").find("span").html("<%:phicomm pppoe dns custom%>");        
+                                }
+                            }
+                        }
+                    }
+                    else   //DHCP问题
+                    {
+                        if(s[0].WanIp == 0)  //WAN口无IP
+                        {
+                            //DHCP问题
+                            $("#inte_status_det_result").find("span").html("<%:phicomm dhcp error%>");
+                        }
+                        else   //WAN口有IP
+                        {
+                            if(s[0].PingWan == 0)  //不能PING通WAN侧网关IP
+                            {
+                                //重启或MAC克隆
+                                $("#inte_status_det_result").find("span").html("<%:phicomm restart or mac clone%>");
+                            }
+                            else  //能PING通WAN侧网关IP
+                            {
+                                if(s[0].DNS == 0)
+                                {
+                                    //DNS地址不存在
+                                    $("#inte_status_det_result").find("span").html("<%:phicomm no dns%>");
+                                }
+                                else if(s[0].DNS == 1)
+                                {
+                                    // DNS地址存在
+                                    $("#inte_status_det_result").find("span").html("<%:phicomm has dns%>");
+                                }
+                                else
+                                {
+                                    // DNS地址自定义
+                                    $("#inte_status_det_result").find("span").html("<%:phicomm pppoe dns custom%>");
+                                }
+                            }
+                        }
+                    }
+                    err_num = err_num + 1;
+                    router_frac = router_frac - 15;
+                    $("#score").html(router_frac);
+                    time_stop = setTimeout("fun_sys_error_3()", 2000);
+                }
+            }
+            );    
+}
+
+function fun_sys_error_3()
+{
+    checkNUm = checkNUm + 1;
+    XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_WIFICheck")%>',null,
+        function(x,s)
+        {
+            if( !isCheck )
+                return;
+            if(s[0].Link24G == 0)
+            {
+                $("#wifi_status_det").show();
+                $("#wifi_status_det_result_2").show(); //2.4G无线未开启
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 10;
+                $("#score").html(router_frac);
+            }
+            else
+            {
+                //2.4G无线开启
+            }
+            if(s[0].Link5G == 0)
+            {
+                $("#wifi_status_det").show();
+                $("#wifi_status_det_result_5").show();  //5G无线未开启
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 10;
+                $("#score").html(router_frac);
+            }
+            else
+            {
+                //5G无线开启
+            }
+            if(s[0].SignalEnhancement24G == 0)
+            {
+                $("#wifi_status_det").show();
+                $("#wifi_status_det_result_sig").show();   //2.4G信号增强未开启
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 10;
+                $("#score").html(router_frac);
+            }
+            else
+            {
+                //2.4G信号增强开启
+            }
+            if(s[0].Link24G == 1 && s[0].Link5G == 1 && s[0].SignalEnhancement24G == 1)
+            {
+                $("#wifi_status_det").show();
+                $("#wifi_status_det_ok").show();
+            }
+            time_stop = setTimeout("fun_sys_error_4()", 2000);
+        }
+        );    
+}
+
+function fun_sys_error_4()
+{
+    checkNUm = checkNUm + 1;
+    XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_WifiPasswordCheck")%>',null,
+        function(x,s)
+        {
+            if( !isCheck )
+                return;
+            if(s[0].GWIFISecurity24G == 1)
+            {
+                $("#wifi_pwd_det").show();
+                $("#wifi_pwd_det_result_2").show();   //2.4G无线密码安全性弱
+                $("#wifi_pwd_det_result_2").find("span").html("<%:phicomm wifi2 pwd low%>");
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 9;
+                $("#score").html(router_frac);
+            }
+            else if(s[0].GWIFISecurity24G == 2)
+            {
+                $("#wifi_pwd_det").show();
+                $("#wifi_pwd_det_result_2").show();   //2.4G无线密码安全性中
+                $("#wifi_pwd_det_result_2").find("span").html("<%:phicomm wifi2 pwd middle%>");
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 5;
+                $("#score").html(router_frac);
+            }
+            else
+            {
+                //2.4G无线密码安全性强
+            }
+            if(s[0].GWIFISecurity5G == 1)
+            {
+                $("#wifi_pwd_det").show();
+                $("#wifi_pwd_det_result_5").show();   //5G无线密码安全性弱
+                $("#wifi_pwd_det_result_5").find("span").html("<%:phicomm wifi5 pwd low%>");
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 9;
+                $("#score").html(router_frac);
+            }
+            else if(s[0].GWIFISecurity5G == 2)
+            {
+                $("#wifi_pwd_det").show();
+                $("#wifi_pwd_det_result_5").show();   //5G无线密码安全性中
+                $("#wifi_pwd_det_result_5").find("span").html("<%:phicomm wifi5 pwd middle%>");
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 5;
+                $("#score").html(router_frac);
+            }
+            else
+            {
+                //5G无线密码安全性强    
+            }
+            if(s[0].GWIFISecurity24G == 3 && s[0].GWIFISecurity5G == 3)
+            {
+                $("#wifi_pwd_det").show();
+                $("#wifi_pwd_det_ok").show();
+            }
+            time_stop = setTimeout("fun_sys_error_5()", 2000);
+        }
+        );    
+}
+
+function fun_sys_error_5()
+{
+    checkNUm = checkNUm + 1;
+    XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_RouterPasswordCheck")%>',null,
+        function(x,s)
+        {
+            if( !isCheck )
+                return;
+            if(s[0].RouterSecurity == 1)
+            {
+                $("#router_pwd_det").show();
+                $("#router_pwd_det_result").show();   //登录密码安全性弱
+                $("#router_pwd_det_result").find("span").html("<%:phicomm router pwd low%>");
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 9;
+                $("#score").html(router_frac);
+                time_stop = setTimeout("fun_sys_error_6()", 2000);
+            }
+            else if(s[0].RouterSecurity == 2)
+            {
+                $("#router_pwd_det").show();
+                $("#router_pwd_det_result").show();   //登录密码安全性中
+                $("#router_pwd_det_result").find("span").html("<%:phicomm router pwd middle%>");
+                warn_num = warn_num + 1;
+                router_frac = router_frac - 5;
+                $("#score").html(router_frac);
+                time_stop = setTimeout("fun_sys_error_6()", 2000);
+            }
+            else
+            {
+                //登录密码安全性强
+                $("#router_pwd_det").show();
+                $("#router_pwd_det_ok").show();
+                time_stop = setTimeout("fun_sys_error_6()", 2000);
+            }
+        }
+        );    
+}
+
+function fun_sys_error_6()
+{
+    checkNUm = checkNUm + 1;
+    XHR.get('<%=luci.dispatcher.build_url("admin", "index", "gra_checkversion")%>',null,
+        function(x,s){
+            if( !isCheck )
+                return;
+
+            if(s[0].retstate == 1)
+            {
+                if(s[0].VerNum == 1)
+                {
+                    $("#firmware_ver_det").show();   //有新版本
+                    $("#firmware_ver_det_result").show();   
+                    warn_num = warn_num + 1;
+                    router_frac = router_frac - 10;
+                    $("#score").html(router_frac);
+                    newVersion = s[0].version;        //最新软件版本
+                    swPt = s[0].pubtime;             //发布日期
+                    if(s[0].versiondesc)
+                        sw_verdesc = s[0].versiondesc;
+                }
+                else
+                {
+                    $("#firmware_ver_det").show();   //没有新版本
+                    $("#firmware_ver_det_ok").show();
+                }
+            }
+            else
+            {
+                $("#firmware_ver_det").show();   //没有新版本
+                $("#firmware_ver_det_ok").show();
+            }
+
+            $("#onekeycheck_button").show();
+            $("#onekeycheck_button").html("<%:phicomm restartcheck%>");
+            if(err_num == 0 && warn_num == 0)
+            {
+                $("#title2span").html("<%:phicomm sys safe and ease of use%>");
+                $("#check_loading").html("");
+                $("#score").css("background",'url("<%=media%>/images/oncheckloadend.png") no-repeat')
+                clearTimeout(load_timer);
+            }
+            else
+            {    $("#title2span").attr("style","font-size:12px;color:#999999");
+                $("#title2span").html("<%:phicomm discovery%><span style='color:#F08300;'>"+err_num+"</span><%:phicomm num error%><span style='color:#F08300;'>"+warn_num+"</span><%:phicomm num warning%>");
+                $("#check_loading").html("");
+                $("#score").css("background",'url("<%=media%>/images/oncheckloadend.png") no-repeat')
+                clearTimeout(load_timer);
+            }
+            currentVersion = s[0].CurNum;    //当前软件版本
+
+        }
+        );    
+}
+    $(function(){
+        $(".cbi_wan_check ").click(function(){
+      $("#wan_check_modal").find(".loading_msg_span").html("<%:qckgd_auodetecting_des%>");
+            $("#wan_check_modal").modal("show");
+        });
+    })
+</script>
+</head>
+
+<body class="content_body bg"  oncontextmenu=self.event.returnValue=false >
+<div class="modal fade" id="wan_check_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-content loading_modal_div" role="document">
+            <img src="<%=media%>/images/load.gif" class="loading_img"/>
+            <span class="loading_msg_span">生效中...</span>
+        </div>
+</div>
+
+    <div class="modal fade" id="myAlert" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="alert_dialog" role="document">
+            <div class="modal-content alert_content">
+                <span id="alert_msg"></span>
+                <button id="confirm_bt" type="button" >确定</button>
+                <button id="cancel_bt" type="button" data-dismiss="modal" style="background: #666666;margin-left:20px;display: none; ">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <button style="display:none" data-toggle="modal" data-target="#promptModal" id="prompt_button">升级提示
+    </button>
+    <div class="modal fade" id="promptModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="progress_modal_dialog" role="document">
+            <div class="modal-content modal_content modal_header_border" style="" >
+                <div class="icon_close_div">
+                    <a href="#" data-dismiss="modal" class="onecheck_close close">
+                        <span class="icon-break icon_close_pan">
+                        </span>
+                    </a>    
+                </div>
+                <div class="modal-header modal_header_border">
+                    <div class="modal_title_div" style="">
+                        <span>升级提示</span>    
+                    </div>
+                </div>
+                <hr>
+                <div>
+                    <div class="software_upgrade_modal_body_div">
+                        <span ><%=prompt%></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--progress_bar  -->
+    <button style="display: none;" data-toggle="modal" data-target="#progress_barModal" id="progress_bar_buttom">进度条</button>
+    <div class="modal fade" id="progress_barModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="progress_modal_dialog" role="document">
+            <div class="modal-content modal_content">
+                <button type="button" id="close_progress_button" class="close" data-dismiss="modal" style="opacity: 0;">
+                </button>
+                <div class="progress_modal_content_title">
+                    <% if reset_process then %>
+                    <span id="progress_content_up">恢复出厂中...</span>
+                    <% elseif upgrading then %>
+                    <span id="progress_content_up">固件升级中...</span>
+                    <% else %>
+                    <span id="progress_content_up">设备重启中...</span>
+                    <% end %>
+                    <div class="progress_div">
+                        <div class="progress_bar_div" id="progress_bar" w="476" style="width:0px;">
+                            <div class="progress_bar_circle_div"></div>
+                        </div>
+                    </div>
+                    <div class="progress_msg_div">
+                        <% if upgrading then %>
+                        <span id="progress_content_down">路由器固件升级中，请勿切断电源！</span>
+                        <% else %>
+                        <span id="progress_content_down">路由器重启中，请勿切断电源！</span>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" name="frm_OneKey" action="<%=luci.dispatcher.build_url("admin", "index", "gra_onekeyupgrade")%>" enctype="multipart/form-data" target="">
+        <input type="hidden" name="onekeyupgrade" value="1">
+    </form>
+    <!-- soft update -->
+    <button style="display:none" data-toggle="modal" data-target="#upgradeModal" id="upgrade_button">软件升级</button>
+    <div class="modal fade" id="upgradeModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" >
+        <div class="progress_modal_dialog" role="document" style="margin-top:100px;">
+            <div class=" software_upgrade_modal_content">
+                <div class="modal-header modal_header_border">
+                    <div class="modal_title_div" style="margin-top:25px;">
+                        <span>软件升级</span>    
+                    </div>
+                </div>
+                <hr style="opacity:.5;filter:alpha(opacity=50)">
+                <div class="update_sw_msg_div">
+                    <div class="cur_sw">
+                    <span>当前版本：</span><span id="sw_alert1"></span>
+                    </div>
+                    <div class="new_sw">
+                    <span>最新版本：</span><span id="sw_alert2"></span>
+                    </div>
+                    <div class="release_time">
+                    <span>发布时间：</span><span id="sw_alert3"></span>
+                    </div>
+                </div>
+                 <div class="update_sw_content_div">
+                        <span class="update_content_title">更新内容</span>
+                        <span id="sw_alert4"></span>
+                </div>
+                <div class="button_div">
+                    <div class="btn confirm_button" id="savebackup">
+                        <span class="button_span">确认</span>
+                    </div>
+                    <div class="btn  cancel_button" id="cancelbackup" data-dismiss="modal"><span class="button_span">取消</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%
+    local disp = require "luci.dispatcher"    
+    local request = disp.context.request
+    %>
+    <!-- header -->
+    <nav class=" header_div navbar navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header header_left">
+                <div  class="navbar-brand head_logo" >
+                    <img style="" src="<%=media%>/images/logo.png" >
+                </div> 
+                <div class="header_min_button_div">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+
+                </div> 
+            </div>
+            <div class="header_right">
+                <div class=" collapse navbar-collapse" id="bs-example-navbar-collapse-1" style="">
+                    <div class="nav header_center_div">
+                        <ul class="nav navbar-nav">
+                            <li>
+                                <a class="header_a" id="index"  href="<%=nodeurl("/" .. "admin" .. "/", "index")%>" <%if request[2] =="index" then%> style="background:#F5F5F5;color:#F08300" <%end%>>
+                                    <div>
+                                        <span class="icon-homepage header_icon"></span>
+                                        <span class="header_text_span"><%:phicomm index%></span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="header_a" id="networkset" href="<%=nodeurl("/" .. "admin" .. "/", "networkset")%>" <% if request[2] =="networkset" then%> style="background:#F5F5F5;color:#F08300" <%end%>>
+                                    <div>
+                                        <span class="icon-networkset header_icon"></span>
+                                        <span class="header_text_span"><%:phicomm networkset%></span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="header_a" id="wifiset" href="<%=nodeurl("/" .. "admin" .. "/", "wifiset")%>" <% if request[2] =="wifiset" then%> style="background:#F5F5F5;color:#F08300" <%end%>>
+                                    <div>
+                                        <span class="icon-wifiset header_icon"></span>
+                                        <span class="header_text_span"><%:phicomm wifiset%></span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="header_a" id="device_manage" href="<%=nodeurl("/" .. "admin" .. "/", "device_manage")%>" <% if request[2] =="device_manage" then%> style="background:#F5F5F5;color:#F08300" <%end%>>
+                                    <div>
+                                        <span class="icon-device_manage header_icon"></span>
+                                        <span class="header_text_span"><%:phicomm deviceset%></span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="header_a" id="more_set" href="<%=nodeurl("/" .. "admin" .. "/", "more_sysstatus")%>" <% if request[2] ~="device_manage" and request[2] ~="wifiset" and request[2] ~="networkset" and request[2] ~="index" then%> style="background:#F5F5F5;color:#F08300" <%end%>>
+                                    <div>
+                                        <span class="icon-advancedset header_icon"></span>
+                                        <span class="header_text_span"><%:phicomm more%></span>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="nav header_right_div">
+                        <ul class="nav navbar-nav navbar-right ">
+                            <li class="header_left_li">
+                                <div title="一键体检" href="#" id="onekeycheck"  data-toggle="modal" data-target="#onekeyCheckModal" style="cursor:pointer">
+                                    <span class="icon-physicalexamination header_other_icon" >
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="dropdown header_left_li">
+                                <div title="重启" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="cursor:pointer">
+                                    <span class="icon-restart header_other_icon" >
+                                    </span>
+                                </div>
+                                <ul id="reboot_ul"  class="dropdown-menu">
+                                    <li>
+                                        <a href="#" id="restart" data-toggle="modal">立即重启路由器</a>
+                                    </li>
+                                    <li>
+                                        <a href="#" id="timeRboot" data-toggle="modal" data-target="#timeRestartModal">定时重启路由器</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown header_left_li" >
+                                <div title="管理员设置" href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="cursor:pointer">
+                                    <span class="icon-signin header_other_icon">
+                                    </span>
+                                </div>
+                                <ul id="user_ul" class="dropdown-menu" aria-labelledby="userset">
+                                    <li>
+                                        <a href="#" id="change_pwd" data-toggle="modal" data-target="#changePwdModal"><%:phicomm modify pwd%>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<%=nodeurl("/" .. "admin" .. "/", "logout")%>"><%:phicomm queit%>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="modal fade onekeycheck_div" id="timeRestartModal" tabindex="-1" role="dialog" aria-labelledby="changePwdModalLabel">
+        <form method="post" name="from_time_reboot" action="<%=luci.dispatcher.build_url("admin", "timereboot")%>" enctype="multipart/form-data" target="">
+            <div class="modal-dialog changePwd_dialog" role="document">
+                <div class="modal-content changePwd_content" >
+                    <div class="modal-header modal_header_border">
+                        <div class="icon_close_div">
+                            <a href="#" data-dismiss="modal" class="close">
+                                <span class="icon-break icon_close_pan"   style=""></span>
+                            </a>
+                        </div>
+                        <div class="modal_title_div" style="">
+                            <span>定时重启路由器</span>    
+                        </div>
+                    </div>
+                    <hr style="margin-bottom: 5px;">
+                    <div class="modal-body">
+                        <div style="margin-top:10px;height: 45px;line-height: 43px;">
+                            <span class="link_span" style="width: 210px;">定时重启：</span>
+                            <img id="timeRebootEnable" class="img_change" <% if timerebootstatus == "off" then %> src="<%=media%>/images/switch_off.png" value="0" <% else %> value="1" src="<%=media%>/images/switch_on.png"<% end %> style="margin-top: 5px;float: left;margin-left: 10px;">
+                        </div>      
+                        <div id="timeRebootDiv" style="height: 45px;line-height: 43px;opacity: 0;filter: alpha(opacity=0);">
+                            <span class="link_span" style="width: 210px;">指定重启时间：</span>
+                            <div class="dropdown dropdown_div" style="float:left;margin-left:10px;width: 65px;">
+                                <div class="dropdown_button" onclick="dropdown_click(this)" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">                     
+                                    <input type="text" id="timereboothour" class="drop_input" readonly="readonly" onfocus="this.blur();" unselectable="on" value="<%=timereboothour%>" style="width: 65px;">
+                                    <span class="icon-downarrow"></span>
+                                </div>
+                                <ul class="dropdown-menu timeRebootUl" aria-labelledby="dLabel" style="min-width:65px;height: 104px;overflow-x:hidden">
+                                    <li id="0"><a value="00">00</a></li>
+                                    <li id="1"><a value="01">01</a></li>
+                                    <li id="2"><a value="02">02</a></li>
+                                    <li id="3"><a value="03">03</a></li>
+                                    <li id="4"><a value="04">04</a></li>
+                                    <li id="5"><a value="05">05</a></li>
+                                    <li id="6"><a value="06">06</a></li>
+                                    <li id="7"><a value="07">07</a></li>
+                                    <li id="8"><a value="08">08</a></li>
+                                    <li id="9"><a value="09">09</a></li>
+                                    <li id="10"><a value="10">10</a></li>
+                                    <li id="11"><a value="11">11</a></li>
+                                    <li id="12"><a value="12">12</a></li>
+                                    <li id="13"><a value="13">13</a></li>
+                                    <li id="14"><a value="14">14</a></li>
+                                    <li id="15"><a value="15">15</a></li>
+                                    <li id="16"><a value="16">16</a></li>
+                                    <li id="17"><a value="17">17</a></li>
+                                    <li id="18"><a value="18">18</a></li>
+                                    <li id="19"><a value="19">19</a></li>
+                                    <li id="20"><a value="20">20</a></li>
+                                    <li id="21"><a value="21">21</a></li>
+                                    <li id="22"><a value="22">22</a></li>
+                                    <li id="23"><a value="23">23</a></li>
+                                </ul> 
+                            </div>
+                            <span style="line-height: 31px;float: left;width: 15px;text-align: right;">:</span>
+                            <div class="dropdown dropdown_div" style="float:left;width: 65px;">
+                                <div class="dropdown_button" onclick="dropdown_click(this)" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="">             
+                                    <input type="text" class="drop_input" id="timerebootmin" readonly="readonly" onfocus="this.blur();" unselectable="on" value="<%=timerebootmin%>" style="width:65px;">
+                                    <span class="icon-downarrow"></span>
+                                </div>
+                                <ul class="dropdown-menu timeRebootUl" aria-labelledby="dLabel" style="min-width:65px;height: 104px;overflow-x:hidden">
+                                    <li id="0"><a value="00">00</a></li>
+                                    <li id="1"><a value="05">05</a></li>
+                                    <li id="2"><a value="10">10</a></li>
+                                    <li id="3"><a value="15">15</a></li>
+                                    <li id="4"><a value="20">20</a></li>
+                                    <li id="5"><a value="25">25</a></li>
+                                    <li id="6"><a value="30">30</a></li>
+                                    <li id="7"><a value="35">35</a></li>
+                                    <li id="8"><a value="40">40</a></li>
+                                    <li id="9"><a value="45">45</a></li>
+                                    <li id="10"><a value="50">50</a></li>
+                                    <li id="11"><a value="55">55</a></li>
+                                </ul> 
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-left: 23px;">
+                        <button type="button" class="check_button" id="timeRebootSave">保 存</button>
+                    </div>
+                    <input id="timeRebootEnablestatus" name="timeRebootEnablestatus" value="<%=timerebootstatus%>" type="hidden">
+                    <input id="timeRebootrange" name="timeRebootrange" value="" type="hidden">
+                    <input id="cururl" name="cururl" value="" type="hidden">
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--modify pwd-->
+    <div class="modal fade onekeycheck_div" id="changePwdModal" tabindex="-1" role="dialog" aria-labelledby="changePwdModalLabel" style="">
+        <form method="post" name="frm_change_pwd" action="<%=luci.dispatcher.build_url("admin", "index", "gra_changepassword")%>" enctype="multipart/form-data" target="">
+            <div class="modal-dialog changePwd_dialog" role="document">
+                <div class="modal-content changePwd_content" >
+                    <div class="modal-header modal_header_border">
+                        <div class="icon_close_div">
+                            <a href="#" data-dismiss="modal" class="close">
+                                <span class="icon-break icon_close_pan"   style="">
+                                </span>
+                            </a>    
+                        </div>
+                        <div class="modal_title_div" style="">
+                            <span><%:phicomm modify pwd%></span>    
+                        </div>
+                    </div>
+                    <hr style="margin-bottom: 5px;">
+                    <div class="modal-body">
+                        <div class="changePwdModal_body">
+                            <span id="error_msg" style="text-align: center;color: #FF0000;"></span>
+                            <div style="margin-top:10px;">
+                                <span style=""><%:phicomm old pwd%></span>
+                                <input type="password" id="pwd_old" value=""></input>
+                            </div>
+                            <div>
+                                <span style=""><%:phicomm new pwd%></span>
+                                <input type="password" id="pwd_new1" name="pwd_new" value=""></input>
+                                <img src="<%=media%>/images/icon_visible_off.png" class="img_change user_new_pwd" value="1">
+                            </div>
+                            <div>
+                                <span style=""><%:phicomm confirm pwd%></span>
+                                <input type="password" id="pwd_new2" value=""></input>
+                                <img src="<%=media%>/images/icon_visible_off.png" class="img_change user_new_pwd" value="1">
+                            </div>
+
+                        </div>
+                    </div>
+                    <div style="margin-left: 23px;">
+                        <button type="button" class="check_button" id="save_pwd"><%:Save%>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!--onekeycheck-->
+    <div class="modal fade onekeycheck_div" id="onekeyCheckModal" tabindex="-1" role="dialog" aria-labelledby="onekeyCheckModalLabel">
+        <div class="onekeycheck_dialog" role="document">
+            <div class="modal-content" style="min-height:304px;">
+                <div class="modal-header modal_header_border">
+                    <div class="icon_close_div">
+                        <a href="#" data-dismiss="modal" class="onecheck_close close" id="onecheck_list">
+                            <span class="icon-break icon_close_pan">
+                            </span>
+                        </a>    
+                    </div>
+                    <div class="modal_title_div"  id="title1">
+                        <span><%:phicomm onekey check%></span>    
+                    </div>        
+                    <div class="modal_header_score_div" style="display:none;" id="title2">
+                        <span class="modal_header_score_div_span1"><%:phicomm onekey check%></span>
+                        <span class="modal_header_score_div_span2" id="title2span"><%:phicomm checking%></span>
+                        <span class="check_loading_span" id="check_loading"></span>
+                        <div class="onekeycheck_score2" id="score">100
+                        </div>
+
+                    </div>
+                </div>
+                <hr>
+                <div class="modal-body" style="text-align:left;margin-top: -10px;min-height:185px;">
+                    <div>
+                        <span class="onecheckmodal_body_1" id="fault_det" style="display:none"><%:phicomm error det%></span>
+                        <div class="onecheckmodal_body_2">
+                            <span id="wan_fault_det" style="display:none"><%:phicomm wan error det%></span>
+                            <img class="onecheckmodal_body_2_span" src="<%=media%>/images/hook.png"  id="wan_fault_det_ok" style="display:none"/>
+                            <div class="onecheckmodal_body_3" id="wan_fault_det_result" style="display:none">
+                                <div class="onecheckmodal_body_3_div1">
+                                    <span><%:phicomm phy link down%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div2">
+                                    <button id="wanlink_up"><%:phicomm refresh%></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="onecheckmodal_body_2" >
+                            <span id="inte_status_det" style="display:none"><%:phicomm network status det%></span>
+                            <img class="onecheckmodal_body_2_span" src="<%=media%>/images/hook.png"  id="inte_status_det_ok" style="display:none"/>
+                            <div class="onecheckmodal_body_3" id="inte_status_det_result" style="display:none">
+                                <div class="onecheckmodal_body_3_div1">
+                                    <span>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div2">
+                                    <button id="network_list"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px;display:none" id="onecheckmodal_body_1_div">
+                        <span class="onecheckmodal_body_1" id="sys_alert" style="display:none"><%:phicomm sys warn%></span>
+                        <div class="onecheckmodal_body_2" >
+                            <span id="wifi_status_det" style="display:none"><%:phicomm wifi status det%></span>
+                            <img class="onecheckmodal_body_2_span" src="<%=media%>/images/hook.png"   id="wifi_status_det_ok" style="display:none"/>
+                            <div class="onecheckmodal_body_3" id = "wifi_status_det_result_2" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm wifi2 disable%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button class="wifi_list"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+                            <div class="onecheckmodal_body_3" id = "wifi_status_det_result_5" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm wifi5 disable%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button class="wifi_list"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+                            <div class="onecheckmodal_body_3" id = "wifi_status_det_result_sig" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm signal enhancement%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button id="signal_en"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="onecheckmodal_body_2" >
+                            <span id="wifi_pwd_det" style="display:none"><%:phicomm wifi pwd det%></span>
+                            <img class="onecheckmodal_body_2_span" src="<%=media%>/images/hook.png"  id="wifi_pwd_det_ok" style="display:none"/>
+                            <div class="onecheckmodal_body_3" id="wifi_pwd_det_result_2" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm wifi2 pwd low%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button class="wifi_list"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+
+                            <div class="onecheckmodal_body_3" id="wifi_pwd_det_result_5" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm wifi5 pwd low%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button class="wifi_list"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="onecheckmodal_body_2" >
+                            <span id="router_pwd_det" style="display:none"><%:phicomm router pwd det%></span>
+                            <img class="onecheckmodal_body_2_span" src="<%=media%>/images/hook.png"  id="router_pwd_det_ok" style="display:none"/>
+                            <div class="onecheckmodal_body_3" id="router_pwd_det_result" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm router pwd low%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button id="pwd_list"><%:phicomm immediate modification%></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="onecheckmodal_body_2" >
+                            <span id="firmware_ver_det" style="display:none"><%:phicomm software ver det%></span>
+                            <img class="onecheckmodal_body_2_span" src="<%=media%>/images/hook.png"  id="firmware_ver_det_ok" style="display:none"/>
+                            <div class="onecheckmodal_body_3" id="firmware_ver_det_result" style="display:none">
+                                <div class="onecheckmodal_body_3_div3">
+                                    <span><%:phicomm det new ver%>
+                                    </span>
+                                </div>
+                                <div class="onecheckmodal_body_3_div4">
+                                    <button id="update_button"><%:phicomm upgrade now%></button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="onekeycheck_button_div" style="text-align:center;margin-bottom:20px;">
+                      <button class="check_button" id="onekeycheck_button" style=""><%:phicomm begin check%></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <% if #request > 0 and request[2] ~= "index" and request[2] ~= "networkset" and request[2] ~= "wifiset" and request[2] ~= "device_manage" then %>
+    <div class="row list_row_div">
+        <div class="body_left">
+		<% if has_pc1_pic and adshow == 1 then %>
+			<% if has_pc1_adlink then %>
+			<a href="http://<%=server_name%>:8082/adlink_pc1">
+			<% end %>
+				<img src="http://<%=server_name%>/adpush/pic_pc1.png" >
+			<% if has_pc1_adlink then %>
+			</a>
+			<% end %>
+		<% end %>
+        </div>
+        <div class="body_center">
+            <div class="list_body_div">
+
+                <div class="col-md-3 col-xs-3 list_body_col-md-3 content">
+                    <ul class="nav " id="list1">
+                        <% subtree("/" .. category .. "/", cattree)%>
+                        <script type="text/javascript">
+                        <% if request[3]=="UPnPset" or request[2]=="more_sysset" then%>
+          $(".col-md-3").scrollTop($(".col-md-3").height());
+          <%end%>
+                    </script>
+                    </ul>
+                </div>
+
+                <div class="col-md-9 col-xs-9 advance_right_center content">
+                    <%end%>

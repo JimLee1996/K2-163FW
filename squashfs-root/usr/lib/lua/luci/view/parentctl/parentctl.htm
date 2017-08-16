@@ -1,0 +1,579 @@
+<%+header%>
+<% 
+local uci = require("luci.model.uci").cursor()
+local util = require("luci.util")
+local rules = {}
+local rulecount = 0
+local device_name = {}
+
+    uci:foreach("parentctl", "rule",
+    function(s)
+        rules[#rules+1] = s
+        rulecount = rulecount + 1;
+    end)
+
+    for i, t in ipairs(rules) do
+        local tmp = util.split(t.weekdays, ",")
+        local wdays = {}
+        for _, w in ipairs(tmp) do
+            wdays[w] = 1
+        end
+        t.mac_addr = t.src_mac:upper();
+        local section_name = string.gsub(t.mac_addr,":","_")
+        local common_section = uci:get_all("common_host",section_name)
+        if common_section ~= nil then
+            device_name = common_section.hostname
+        else
+            device_name = "Unkown"
+        end
+        t.week1 = wdays["1"] and "1" or "0"
+        t.week2 = wdays["2"] and "1" or "0"
+        t.week3 = wdays["3"] and "1" or "0"
+        t.week4 = wdays["4"] and "1" or "0"
+        t.week5 = wdays["5"] and "1" or "0"
+        t.week6 = wdays["6"] and "1" or "0"
+        t.week7 = wdays["7"] and "1" or "0"
+        t.hostname = device_name
+    end
+
+ %>
+ <script>
+ var cur_mac_list=[];
+ <% for i, t in ipairs(rules) do %>
+    cur_mac_list[<%=i%>] = "<%=t.mac_addr%>";
+<%end%>
+    media_path = "";
+    $(function(){
+        $(".edit_confirm").click(function(){
+            var val = $(this).attr("value");
+            
+            if(val == "edit"){
+                $(this).parents("tr").find("input").removeAttr("readonly");
+                $(this).parents("tr").find("input").css("padding-left","6px");
+                $(this).parents("tr").find("img[name=checkbox]").next("input").removeAttr("disabled");
+                $(this).parents("tr").find("input").css("border","1px solid #ADADAD;");
+                $(this).parents("tr").find(".icon-edit").hide();
+                $(this).parents("tr").find(".icon-delete").hide();
+                $(this).parents("tr").find(".confirm_btn").show();
+                $(this).parents("tr").find(".edit_confirm").attr("value","confirm");
+                $(this).parents("tr").find("td").removeClass("td-bg");
+            }
+            else
+            {
+                var hostname = $(this).parents("tr").find("input[name=hostname]").val();
+                var mac = $(this).parents("tr").find("input[name=hostmac]").val();
+                var week1 = $(this).parents("tr").find("input[name=week1]").attr("checked") ? "1" : "0";
+                var week2 = $(this).parents("tr").find("input[name=week2]").attr("checked") ? "1" : "0";
+                var week3 = $(this).parents("tr").find("input[name=week3]").attr("checked") ? "1" : "0";
+                var week4 = $(this).parents("tr").find("input[name=week4]").attr("checked") ? "1" : "0";
+                var week5 = $(this).parents("tr").find("input[name=week5]").attr("checked") ? "1" : "0";
+                var week6 = $(this).parents("tr").find("input[name=week6]").attr("checked") ? "1" : "0";
+                var week7 = $(this).parents("tr").find("input[name=week7]").attr("checked") ? "1" : "0";
+                var start_time = $(this).parents("tr").find("input[name=starttime]").val();
+                var stop_time = $(this).parents("tr").find("input[name=endtime]").val();
+                var num = $(this).parents("tr").attr("value");
+                if(num == "newrule")
+                {
+                    var original_mac = "none";
+                }
+                else
+                {
+                    var original_mac = cur_mac_list[num];
+                }
+                
+                if(week1 == 0 && week2 == 0 && week3 == 0 && week4 == 0 && week5 == 0 && week6 == 0 && week7 == 0)
+                {
+                    Alert("<%:parentctl_weekdays_error%>");
+                    return false;
+                }
+                
+                mac = mac.replace(/：/g,":");
+                start_time = start_time.replace(/：/g,":");
+                stop_time = stop_time.replace(/：/g,":");
+                if(checkhostname(hostname) && checkmac(mac) && checktime(start_time,stop_time))
+                {
+                    rule_edit(hostname,mac,week1,week2,week3,week4,week5,week6,week7,start_time,stop_time,original_mac,num);
+                }
+            }
+        });
+        
+        $(".icon-delete").click(function()
+            {
+                var mac = $(this).parents("tr").find("input[name=hostmac]").val();
+                var num = $(this).parents("tr").attr("value");
+                rule_del(mac,num);
+            }
+        );
+    });
+    
+    function checkmac(mac)
+    {
+        if(mac.length == 0)
+        {
+            Alert("<%:parentctl_macaddr_null%>");
+            return false;
+        }
+        if(mac.match(/^([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}$/) == null)
+        {
+            Alert("<%:parentctl_MACaddr_error%>");
+            return false;
+        }
+        
+        if(mac == "00:00:00:00:00:00" || mac.toUpperCase() == "FF:FF:FF:FF:FF:FF")
+        {
+            Alert(error_msg[29][1]);
+            return false;
+        }
+        else if((parseInt(mac,16) & parseInt('01',16)) != 0)
+        {
+            Alert(error_msg[30][1]);
+            return false;
+        }
+        
+        return true;
+    }
+    function checkhostname(hostname)
+    {
+        if(hostname.length == 0)
+        {
+            Alert("<%:parentctl_devname_null%>");
+            return false;
+        }
+        var textlength = 0;
+        for(i = 0;i < hostname.length;i++)
+        {
+            if(hostname.charAt(i).match(/[\u0391-\uFFE5]/))
+            {
+                textlength = textlength + 3;
+            }
+            else
+            {
+                textlength = textlength + 1;
+            }
+        }
+        if (textlength > 32)
+        {
+            Alert("<%:parentctl_devname%>:"+error_msg[4][1]+"1"+error_msg[6][1]+"32"+error_msg[8][1]);
+            return false;
+        }
+        
+        for(var i = 0; i < hostname.length; i++) 
+        {
+            if(hostname.charAt(i).match(/[\u0020]/))
+            { 
+                Alert("<%:parentctl_devname%>:<%:multlangjs_include_space%>");
+                return false;
+            }
+            if(hostname.charAt(i).match(/[\u00B7]/)
+                || hostname.charAt(i).match(/[\u0022]/) || hostname.charAt(i).match(/[\u0026]/)
+                || hostname.charAt(i).match(/[\u003E]/) || hostname.charAt(i).match(/[\u003C]/)//<>
+                || hostname.charAt(i).match(/[\u005C]/) || hostname.charAt(i).match(/[\u0027]/)
+                || hostname.charAt(i).match(/[\u0028]/) || hostname.charAt(i).match(/[\u0029]/)//()
+                || hostname.charAt(i).match(/[\u007B]/) || hostname.charAt(i).match(/[\u007D]/)//{}
+                || hostname.charAt(i).match(/[\u0025]/) || hostname.charAt(i).match(/[\u0024]/)
+                || hostname.charAt(i).match(/[\u007E]/) || hostname.charAt(i).match(/[\u007C]/)
+                || hostname.charAt(i).match(/[\u003A]/) || hostname.charAt(i).match(/[\u003B]/)//:;
+                || hostname.charAt(i).match(/[\u002C]/) || hostname.charAt(i).match(/[\u0060]/))//,
+            { 
+                Alert("<%:parentctl_devname%>:<%:multlangjs_spec_1%>");
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    function checktime(start_time,stop_time)
+    {
+        if(start_time.length == 0)
+        {
+            Alert("<%:parentctl_starttime_isnull%>");
+            return false;
+        }
+        if(stop_time.length == 0)
+        {
+            Alert("<%:parentctl_endtime_isnull%>");
+            return false;
+        }
+        if(start_time.match(/^([0-9]{1,2}:)[0-9]{1,2}$/) == null)
+        {
+            Alert("<%:parentctl_starttime_error%>");
+            return false;
+        }
+        if(stop_time.match(/^([0-9]{1,2}:)[0-9]{1,2}$/) == null)
+        {
+            Alert("<%:parentctl_endtime_error%>");
+            return false;
+        }
+        
+        var tmp ;
+        tmp = start_time.split(":");
+        var shour = parseInt(tmp[0],10);
+        var smin = parseInt(tmp[1],10);
+        tmp = stop_time.split(":");
+        var ehour =  parseInt(tmp[0],10);
+        var emin =  parseInt(tmp[1],10);
+        if (shour >= 24 || smin >= 60)
+        {
+            Alert("<%:parentctl_starttime_error%>");
+            return false;
+        }
+        if (ehour >= 24 || emin >= 60)
+        {
+            Alert("<%:parentctl_endtime_error%>");
+            return false;
+        }
+        if((shour > ehour)||(shour == ehour && smin >= emin))
+        {
+            Alert("<%:parentctl_starttime_less_endtime%>");
+            return false;
+        }
+        return true;
+    }
+    
+    function rule_del(mac,num){
+        $.ajax({
+            type:"post",
+            url:"<%=luci.dispatcher.build_url("admin","more_parentctl","del")%>",
+            data:{
+                action:"delete",
+                src_mac:mac,
+                ruleindex:num
+            },
+            error: function(request) {
+                Alert("<%:parentctl_connect_fail%>");
+            },
+            success: function(msg){
+                if (msg.status == "fail")
+                {
+                    Alert(msg.message);
+                }
+                else
+                {
+                    $("#opstatus").val(1);
+                    $("#parentctl_opstatus").submit();
+
+                }
+            }
+        });
+    }
+    function rule_edit(hostname,mac,week1,week2,week3,week4,week5,week6,week7,start_time,stop_time,original_mac,num){
+        $.ajax({
+            type:"post",
+            url:"<%=luci.dispatcher.build_url("admin","more_parentctl","edit")%>",
+            data:{
+                action:"edit",
+                hostname:hostname,
+                src_mac:mac,
+                week1:week1,
+                week2:week2,
+                week3:week3,
+                week4:week4,
+                week5:week5,
+                week6:week6,
+                week7:week7,
+                start_time:start_time,
+                stop_time:stop_time,
+                original_mac:original_mac,
+                ruleindex:num
+            },
+            error: function(request) {
+                Alert("<%:parentctl_connect_fail%>");
+            },
+            success: function(msg){
+                if (msg.status == "fail")
+                {
+                    Alert(msg.message);
+                }
+                else
+                {
+                    $("#opstatus").val(1);
+                    $("#parentctl_opstatus").submit();
+                }
+            }
+        });
+    }
+</script>
+<div class="setcontent advanced">
+    <div class="title-span"><span ><%:parentctl%></span></div>
+    <div class="title-underline"></div>
+    <div class="setlinediv margintop-30">
+        <span class="link-span"><%:parentctl_switch%></span>
+        <div class="radiodiv">
+            <img class="radioSwitch setval showOrHide" name="parentCtrl" <%if uci:get("parentctl", "config", "enabled") == "1" then%>src="<%=media%>/images/icon_radio_on.png"<%end%>src="<%=media%>/images/icon_radio_off.png" value="1" />
+            <span><%:parentctl_on%></span> 
+        </div>
+        <div class="radiodiv">
+            <img class="radioSwitch setval showOrHide" name="parentCtrl" <%if uci:get("parentctl", "config", "enabled") == "1" then%>src="<%=media%>/images/icon_radio_off.png"<%end%>src="<%=media%>/images/icon_radio_on.png" value="0" />
+            <span><%:parentctl_off%></span>
+        </div>
+        <form name="parentctl_switch" id="parentctl_switch" action="<%=REQUEST_URI%>/save" method="post">
+            <input type="hidden" name="switch" id="switch"/>
+        </form> 
+        <form name="parentctl_opstatus" id="parentctl_opstatus" action="<%=REQUEST_URI%>" method="post">
+            <input type="hidden" name="opstatus" id="opstatus"/>
+        </form> 
+    </div>
+    <div class="contentDisplay" id="ctrl_rules" style="display: none;">
+        <div class="setlinediv margintop-30">
+            <span class="content-span width-350"><%:parentctl_max_rule%></span>
+        </div>
+        <div class="margin-left-right5">
+            <table id="parentctlTab" frame="hsides">
+                <tr class="height-31">
+                    <th><%:parentctl_devname%></th>
+                    <th><%:MAC Address%></th>
+                    <th><%:Monday%></th>
+                    <th><%:Tuesday%></th>
+                    <th><%:Wednesday%></th>
+                    <th><%:Thursday%></th>
+                    <th><%:Friday%></th>
+                    <th><%:Saturday%></th>
+                    <th><%:Sunday%></th>
+                    <th><%:parentctl_start%><%:parentctl_time%></th>
+                    <th><%:parentctl_end%><%:parentctl_time%></th>
+                    <th><%:parentctl_op%></th>
+                </tr>
+                <% for i, t in ipairs(rules) do %>
+                <tr value="<%=i%>">
+                    <td title="<%=t.hostname%>" class="td-bg">
+                        <div style="margin: 0 4px;">
+                            <input name="hostname" maxlength="32" value="<%=t.hostname%>" class="input-small border-hide" readonly="readonly" />
+                        </div>
+                    </td>
+                    <td class="td-bg">
+                        <div style="margin: 0 4px;">
+                            <input name="hostmac" maxlength="17" value="<%=t.mac_addr%>" class="input-middle border-hide" readonly="readonly" />
+                        </div>
+                    </td>
+                    <td style="width: 31px;" class="td-bg">                       
+                        <img name="checkbox" class="checkbox-sel sel-enable" <%if t.week1 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />
+                        <input name="week1" type="hidden" <%if t.week1 == "1" then%>checked="checked"<%end%> disabled="disabled"/>
+                    </td>
+                    <td style="width: 31px;" class="td-bg">
+                        <img name="checkbox" class="checkbox-sel" <%if t.week2 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />                    
+                        <input name="week2" type="hidden" <%if t.week2 == "1" then%>checked="checked"<%end%> disabled="disabled"/>
+                    </td>
+                    <td style="width: 31px;" class="td-bg">
+                        <img name="checkbox" class="checkbox-sel" <%if t.week3 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />
+                        <input name="week3" type="hidden" <%if t.week3 == "1" then%>checked="checked"<%end%> disabled="disabled" />
+                    </td>
+                    <td style="width: 31px;" class="td-bg">
+                        <img name="checkbox" class="checkbox-sel" <%if t.week4 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />
+                        <input name="week4" type="hidden" <%if t.week4 == "1" then%>checked="checked"<%end%> disabled="disabled" />
+                    </td>
+                    <td style="width: 31px;" class="td-bg">
+                        <img name="checkbox" class="checkbox-sel" <%if t.week5 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />
+                        <input name="week5" type="hidden" <%if t.week5 == "1" then%>checked="checked"<%end%> disabled="disabled" />
+                    </td>
+                    <td style="width: 31px;" class="td-bg">
+                        <img name="checkbox" class="checkbox-sel" <%if t.week6 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />
+                        <input name="week6" type="hidden" <%if t.week6 == "1" then%>checked="checked"<%end%> disabled="disabled" />
+                    </td>
+                    <td style="width: 31px;" class="td-bg">
+                        <img name="checkbox" class="checkbox-sel" <%if t.week7 == "1" then%>src="<%=media%>/images/icon_checkbox_on.png"<%end%>
+                        src="<%=media%>/images/icon_checkbox_off.png" />
+                        <input name="week7" type="hidden" <%if t.week7 == "1" then%>checked="checked"<%end%> disabled="disabled" />
+                    </td>
+                    <td style="width: 62px;" class="td-bg">
+                        <div style="margin: 0 4px;">
+                            <input name="starttime" maxlength="5" value="<%=t.start_time%>" class="input-xsmall border-hide" readonly="readonly"/>
+                        </div>
+                    </td>
+                    <td style="width: 62px;" class="td-bg">
+                        <div style="margin: 0 4px;">
+                            <input name="endtime" maxlength="5" value="<%=t.stop_time%>" class="input-xsmall border-hide" readonly="readonly"/>
+                        <div style="margin: 0 4px;">
+                    </td>
+                    <td style="width: 70px;min-width: 60px;" class="td-bg">
+                        <span class="icon-edit color-orange mouse-hover edit_confirm" value="edit"></span>
+                        <span class="icon-delete color-orange mouse-hover"></span>
+                        <span class="color-orange mouse-hover confirm_btn edit_confirm" style="display: none;"><%:confirm%></span>
+                    </td>
+                </tr>
+                <% end %>
+                
+                <% if rulecount <= 9 then%>
+                <tr value="newrule">
+                    <td>
+                        <div style="margin: 0 4px;">
+                            <div class="dropdown dropdown_div">
+                                <div class="dropdown_button" id="dLabel" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <input name="hostname" maxlength="32" class="input-small" placeholder="设备名称" style="padding-left: 6px;" />
+                                    <ul class="dropdown-menu ul_dev" aria-labelledby="dLabel" style="margin-left:0px;overflow:-Scroll;overflow-x:hidden;"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="mac_input" style="margin: 0 4px;">
+                            <input name="hostmac" maxlength="17" value="" class="input-middle" placeholder="xx:xx:xx:xx:xx:xx" style="padding-left: 6px;" />
+                        </div>
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week1" type="hidden"/>
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week2" type="hidden"/>
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week3" type="hidden" />
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week4" type="hidden" />
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week5" type="hidden" />
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week6" type="hidden" />
+                    </td>
+                    <td style="width: 31px;">
+                        <img class="checkbox-sel" src="<%=media%>/images/icon_checkbox_off.png">
+                        <input name="week7" type="hidden" />
+                    </td>
+                    <td style="width: 62px;">
+                        <div style="margin: 0 4px;">
+                            <input name="starttime" maxlength="5" value="" placeholder="00:00" class="input-xsmall" style="padding-left: 6px;" />
+                        </div>
+                    </td>
+                    <td style="width: 62px;">
+                        <div style="margin: 0 4px;">
+                            <input name="endtime" maxlength="5" value="" placeholder="00:00" class="input-xsmall" style="padding-left: 6px;" />
+                        </div>
+                    </td>
+                    <td style="width: 64px;min-width: 60px;">
+                        <span class="icon-edit color-orange mouse-hover edit_confirm" style="display: none;" value="edit"></span>
+                        <span class="icon-delete color-orange mouse-hover" style="display: none;"></span>                                                
+                        <span class="color-orange mouse-hover confirm_btn edit_confirm"><%:confirm%></span>
+                    </td>
+                </tr>
+                <% end %>
+            </table>
+        </div>
+    </div>
+    <div class="setlinediv margintop-30">
+        <div type="button" class="button-square-lg btndiv" onclick="parentctl_save()"><%:Save%></div>
+    </div>
+</div>
+
+<style>
+    .ul_dev{
+        display: none;
+    }
+</style>
+
+<script text="text/javascript">
+var clients ;
+function initHostName(){
+    var i=0;
+    for(i=0;i<clients.length;++i){
+        var liHtml = '<li value="' + clients[i].DeviceRename + '"><a value="' + clients[i].DeviceRename + '">' + clients[i].DeviceRename + '</a></li>';
+        $(".dropdown_div").find("input").next("ul").append(liHtml);
+    }
+     initClassFun();
+}
+function macByName(devicename){
+    var i=0;
+    for(i=0;i<clients.length;++i){
+        if(clients[i].DeviceRename == devicename)
+        {
+            $(".mac_input").find("input").val(clients[i].MAC);
+        }
+    }
+}
+function initClassFun(){
+    $(".dropdown_button").find("ul").find("li").unbind();
+    $(".dropdown_button").find("ul").find("li").click(function(){
+        var val=$(this).attr("value");
+        $(this).parents("ul").prev("input").val(val);
+        $(this).parents("ul").hide();
+        macByName(val);
+    })
+}
+$(function(){
+    $.ajax({
+        type:"post",
+        url:"/LocalClientList.asp?action=get",
+        success: function(urlInfo){
+            clients = urlInfo.retClientInfo.Clientlist;
+            initHostName();
+        }
+    });
+
+    $(".dropdown_button").find("input").click(function(event){
+        event.stopPropagation();
+        $(this).next("ul").show();
+    });
+
+    $(document).click(function(){
+        $(".dropdown_button").find("input").next("ul").hide();
+    });
+
+    $(".radioSwitch").click(function(){ 
+        var radio_name = $(this).attr("name");
+        var radio_val = $(this).attr("value");
+                
+        $("img[name='"+radio_name+"']").attr("src","<%=media%>/images/icon_radio_off.png");
+        $(this).attr("src","<%=media%>/images/icon_radio_on.png");  
+        $("#switch").val(radio_val);        
+    });
+
+    $(".showOrHide").click(function(){
+        var radio_val = $(this).attr("value");
+        if(radio_val == 1){
+            $(".contentDisplay").show();
+        }else{
+            $(".contentDisplay").hide();
+        }
+    });
+});
+function InitRadio(){
+    var radio_switch = "<%=uci:get("parentctl", "config", "enabled")%>";
+    if(radio_switch == 1){
+        $(".contentDisplay").show();
+    }else{
+        $(".contentDisplay").hide();
+    }
+    $("#switch").val(radio_switch);
+}
+
+$(function(){
+    InitRadio();
+
+    $(".checkbox-sel").click(function(){
+        var checkbox_str = $(this).attr("src"); 
+        var sel_enable = $(this).next("input").attr("disabled");
+ 
+        if(sel_enable != "disabled" && sel_enable !=""){
+            if(checkbox_str == "<%=media%>/images/icon_checkbox_on.png"){
+                $(this).attr("src","<%=media%>/images/icon_checkbox_off.png");
+                $(this).next("input").removeAttr("checked");
+            }else{
+                $(this).attr("src","<%=media%>/images/icon_checkbox_on.png"); 
+                $(this).next("input").attr("checked","checked");
+            }            
+        }
+
+    });
+});
+
+function parentctl_save()
+{
+    $("#wan_check_modal").modal("show");
+    setTimeout(function(){$("#parentctl_switch").submit();},1000);
+}
+</script>
+
+<%+footer%>

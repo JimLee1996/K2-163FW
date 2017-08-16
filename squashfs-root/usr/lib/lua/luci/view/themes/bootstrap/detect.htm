@@ -1,0 +1,111 @@
+<script type="text/javascript">
+function Explorer()
+{
+	this.isIE = false;
+	this.isIESix = false;
+	this.isIESeven = false;
+	this.isIENormal = false;
+	this.isIETenLess = false;
+	this.explorerInfo = navigator.userAgent;
+	
+	this.getIEInfo = function ()
+	{
+		isIE = /msie ((\d+\.)+\d+)/i.test(explorerInfo)?(document.mode || RegExp["$1"]):false;
+		if (isIE != false)
+		{
+			if (isIE <= 6)
+			{
+				this.isIESix = true;
+			}
+			else if (isIE == 7)
+			{
+				this.isIESeven = true;
+			}
+			else if (isIE >= 9)
+			{
+				this.isIENormal = true;
+			}
+
+			if (isIE <= 10)
+			{
+				this.isIETenLess = true;
+			}
+
+			this.isIE = true;
+		}
+	};
+
+	this.getIEInfo();	
+}
+
+/* 检测LAN是否可以连接DUT */
+function LanDetect()
+{
+	Explorer.call(this);
+
+	this.LAN_DETECT_TIME = 3000;			// 每3秒探测一次
+	this.lanDetectTimeHd = null;
+
+	<% local uci = require "luci.model.uci".cursor() %>
+	this.domainUrl = "<%=uci:get("network","lan","ipaddr")%>";
+	this.changeDomain = function(domain){
+		this.domainUrl = domain;
+	};
+
+	this.detectWidthImg = function(src, callBack){
+		var img = new Image();
+
+		img.onload = function(){
+			callBack();
+		};
+
+		img.src = src;
+	}
+
+	this.detect = function(callBack){
+		var src = "http://" + this.domainUrl + "/web-static/images/nothing.png?seq=" + Math.random();
+
+		if (true == isIETenLess){
+			this.detectWidthImg(src, callBack);
+		}else{
+			$.ajax({
+				'timeout':2000,
+				'url': src,
+				'complete':function(xhr, status){
+					console.log(xhr);
+
+					if ((xhr.readyState == 4) && (xhr.status >= 100)){
+						callBack();
+					}
+				}
+			});
+		}
+	};
+
+	this.lanDetectHandle = function(callBack){
+		clearTimeout(this.lanDetectTimeHd);
+
+		if (false == this.lanDetectSuccess){
+			this.lanDetectSuccess = true;
+			callBack();
+		}
+	}
+
+	this.lanDetecting = function(callBack){
+		clearTimeout(this.lanDetectTimeHd);
+		this.lanDetectSuccess = false;
+
+		this.detect(function(){
+			lanDetectHandle(callBack);
+		});
+
+		this.lanDetectTimeHd = setTimeout(function(){
+			lanDetecting(callBack);
+		}, this.LAN_DETECT_TIME);
+	}
+}
+
+(function(){
+	LanDetect.call(window);
+})();
+</script>
